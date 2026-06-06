@@ -43,7 +43,7 @@ export const CAPACITY_LABEL: Record<CapacityStatus, string> = {
 
 // ---------- Risk detectors ----------
 
-function isMinor(p: NaturalPerson): boolean {
+export function isMinor(p: NaturalPerson): boolean {
   const s = determineCapacityStatus(p);
   return (
     s === "cselekvokeptelen_kiskoru" ||
@@ -528,5 +528,5 @@ export function generateCaseSummary(c: CaseFile): string {
 }
 
 // re-export helpers
-export { isMinor, isRestricted };
+export { isRestricted };
 export type { Company };

@@ -1,6 +1,7 @@
 import type { CaseFile, NaturalPerson, Company } from "./types";
+import { emptyModulok } from "./modulok";
 
-const STORAGE_KEY = "szladits.casefile.v1";
+const STORAGE_KEY = "szladits.casefile.v2";
 
 export function emptyCase(): CaseFile {
   return {
@@ -81,6 +82,7 @@ export function emptyCase(): CaseFile {
         nyilatkozatok: false,
       },
     },
+    modulok: emptyModulok(),
   };
 }
 
@@ -89,7 +91,13 @@ export function loadCase(): CaseFile {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return emptyCase();
-    return { ...emptyCase(), ...(JSON.parse(raw) as CaseFile) };
+    const parsed = JSON.parse(raw) as Partial<CaseFile>;
+    const base = emptyCase();
+    return {
+      ...base,
+      ...parsed,
+      modulok: { ...base.modulok, ...(parsed.modulok ?? {}) },
+    } as CaseFile;
   } catch {
     return emptyCase();
   }
