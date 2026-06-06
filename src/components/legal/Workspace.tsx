@@ -518,7 +518,7 @@ function PartyCard({
   const patch = <K extends keyof Party>(k: K, v: Party[K]) =>
     update((d) => {
       const target = d.parties.find((x) => x.id === party.id);
-      if (target) (target as Record<string, unknown>)[k as string] = v as unknown;
+      if (target) (target as unknown as Record<string, unknown>)[k as string] = v as unknown;
     });
   const patchRep = (k: string, v: string) =>
     update((d) => {
@@ -531,7 +531,7 @@ function PartyCard({
         azonosito: "",
         hatarozat: "",
       };
-      (rep as Record<string, string>)[k] = v;
+      (rep as unknown as Record<string, string>)[k] = v;
       target.kepviselo = rep;
     });
 
@@ -717,11 +717,11 @@ function Step3({
   const p = c.property;
   const patch = (k: string, v: unknown) =>
     update((d) => {
-      (d.property as Record<string, unknown>)[k] = v;
+      (d.property as unknown as Record<string, unknown>)[k] = v;
     });
   const patchEnc = (k: string, v: unknown) =>
     update((d) => {
-      (d.property.encumbrances as Record<string, unknown>)[k] = v;
+      (d.property.encumbrances as unknown as Record<string, unknown>)[k] = v;
     });
   return (
     <div>
@@ -781,7 +781,7 @@ function Step4({
   const p = c.payment;
   const patch = (k: string, v: unknown) =>
     update((d) => {
-      (d.payment as Record<string, unknown>)[k] = v;
+      (d.payment as unknown as Record<string, unknown>)[k] = v;
     });
   return (
     <div>
@@ -847,7 +847,7 @@ function Step5({
   const p = c.possession;
   const patch = (k: string, v: unknown) =>
     update((d) => {
-      (d.possession as Record<string, unknown>)[k] = v;
+      (d.possession as unknown as Record<string, unknown>)[k] = v;
     });
   return (
     <div>
@@ -881,7 +881,7 @@ function Step6({
   const f = c.special.foldforgalmi;
   const patchF = (k: string, v: unknown) =>
     update((d) => {
-      (d.special.foldforgalmi as Record<string, unknown>)[k] = v;
+      (d.special.foldforgalmi as unknown as Record<string, unknown>)[k] = v;
     });
   const agriRelevant =
     c.transactionTypes.includes("termofold") ||
