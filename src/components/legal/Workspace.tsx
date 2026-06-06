@@ -30,6 +30,7 @@ import {
 import { generateContractDraft } from "@/lib/legal/contract";
 import { Modulok } from "@/components/legal/Modulok";
 import { JogiAsszisztens } from "@/components/legal/JogiAsszisztens";
+import { UgyvedChecklist } from "@/components/legal/UgyvedChecklist";
 import { Button } from "@/components/ui/button";
 
 type StepId = 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -63,6 +64,7 @@ export function Workspace() {
   const [step, setStep] = useState<StepId>(1);
   const [hydrated, setHydrated] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [checklistOpen, setChecklistOpen] = useState(false);
   const [outputTab, setOutputTab] =
     useState<"szerzodes" | "hianyzo" | "kockazat" | "mellekletek" | "osszefoglalo">(
       "szerzodes",
@@ -156,6 +158,9 @@ export function Workspace() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="default" onClick={() => setChecklistOpen(true)}>
+              ✅ Mielőtt elküldöm az ügyvédnek
+            </Button>
             <Button size="sm" variant="default" onClick={() => setChatOpen(true)}>
               💬 Jogi asszisztens (AI)
             </Button>
@@ -360,6 +365,7 @@ export function Workspace() {
       </footer>
 
       {chatOpen && <JogiAsszisztens c={c} onClose={() => setChatOpen(false)} />}
+      {checklistOpen && <UgyvedChecklist c={c} onClose={() => setChecklistOpen(false)} />}
     </div>
   );
 }
