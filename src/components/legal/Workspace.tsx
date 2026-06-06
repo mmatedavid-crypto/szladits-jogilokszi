@@ -320,6 +320,8 @@ export function Workspace() {
       <footer className="no-print border-t border-border bg-secondary text-secondary-foreground px-6 py-3 text-xs">
         {INTERNAL_FOOTER}
       </footer>
+
+      {chatOpen && <JogiAsszisztens c={c} onClose={() => setChatOpen(false)} />}
     </div>
   );
 }
