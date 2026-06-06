@@ -199,7 +199,7 @@ const scenarios: Scenario[] = [
     required: [
       ...hasDraftSafeguards,
       contains("6:185. §"),
-      contains("Inytv. 47/A. §"),
+      contains("2021. évi C. tv"),
       contains("Üttv."),
       contains("Pmt."),
       contains("B400"),
