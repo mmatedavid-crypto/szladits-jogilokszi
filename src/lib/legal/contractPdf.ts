@@ -325,9 +325,10 @@ function drawSignatures(ctx: RenderCtx) {
   doc.setFontSize(11);
   doc.text("P.H.", PAGE_W - MARGIN_X - 25, y0 - 4, { baseline: "top" });
   doc.setDrawColor(150, 150, 150);
-  doc.setLineDash([1.5, 1.5], 0);
+  // szaggatott körvonal P.H. helynek
+  (doc as unknown as { setLineDashPattern?: (p: number[], o: number) => void }).setLineDashPattern?.([1.5, 1.5], 0);
   doc.circle(PAGE_W - MARGIN_X - 20, y0 + 4, 12, "S");
-  doc.setLineDash([], 0);
+  (doc as unknown as { setLineDashPattern?: (p: number[], o: number) => void }).setLineDashPattern?.([], 0);
   ctx.y = y0 + 26;
 }
 
