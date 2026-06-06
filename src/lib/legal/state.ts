@@ -6,7 +6,7 @@ import { emptyModulok } from "./modulok";
 export function emptyCase(): CaseFile {
   return {
     ugyAzonosito: "",
-    letrehozva: new Date().toISOString(),
+    letrehozva: "",
     eljaroUgyved: { nev: "", kaszSzam: "", iroda: "", irodaCim: "" },
     transactionTypes: [],
     parties: [],
@@ -267,6 +267,7 @@ export function createCase(label?: string): CaseFile {
   const id = genCaseId();
   c.id = id;
   c.cimke = label?.trim() || "Új ügy";
+  c.letrehozva = new Date().toISOString();
   c.utoljaraMentve = new Date().toISOString();
   store.cases[id] = c;
   store.activeId = id;
@@ -325,6 +326,7 @@ export function newId(prefix = "p"): string {
 
 export function demoCase(): CaseFile {
   const base = emptyCase();
+  base.letrehozva = new Date().toISOString();
   base.ugyAzonosito = "DEMO-2026-001";
   base.eljaroUgyved = {
     nev: "dr. Szladits Anna",
