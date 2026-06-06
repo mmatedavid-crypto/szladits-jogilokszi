@@ -1078,6 +1078,7 @@ function Step6({
 // ---------- Step 7 ----------
 
 function Step7({
+  c,
   tab,
   setTab,
   contract,
@@ -1089,6 +1090,7 @@ function Step7({
   onPrint,
   onExport,
 }: {
+  c: CaseFile;
   tab: "szerzodes" | "hianyzo" | "kockazat" | "mellekletek" | "osszefoglalo";
   setTab: (t: "szerzodes" | "hianyzo" | "kockazat" | "mellekletek" | "osszefoglalo") => void;
   contract: string;
@@ -1098,7 +1100,10 @@ function Step7({
   attachments: ReturnType<typeof generateAttachmentList>;
   onCopy: () => void;
   onPrint: () => void;
-  onExport: (kind: "txt" | "html" | "docx") => Promise<void>;
+  onExport: (
+    kind: "txt" | "html" | "docx",
+    variant?: "sima" | "biztonsagi_okmany",
+  ) => Promise<void>;
 }) {
   const tabs: { id: typeof tab; label: string }[] = [
     { id: "szerzodes", label: "Szerződéstervezet" },
@@ -1107,6 +1112,12 @@ function Step7({
     { id: "mellekletek", label: `Mellékletlista (${attachments.length})` },
     { id: "osszefoglalo", label: "Ügyleti összefoglaló" },
   ];
+
+  const agri =
+    c.transactionTypes.includes("termofold") ||
+    c.transactionTypes.includes("tanya") ||
+    (c.transactionTypes.includes("zartkert") &&
+      c.special.zartkertStatus === "mezogazdasagi");
 
   const groups: Record<string, typeof missing> = {};
   missing.forEach((m) => {
@@ -1121,9 +1132,19 @@ function Step7({
         <span className="text-xs text-muted-foreground mr-2">
           A teljes dokumentumcsomag exportja (tervezet — ügyvédi ellenjegyzésre vár):
         </span>
-        <Button size="sm" variant="default" onClick={() => void onExport("docx")}>
-          📝 Word (.docx)
+        <Button size="sm" variant="default" onClick={() => void onExport("docx", "sima")}>
+          📝 Word — sima nyomtatott
         </Button>
+        {agri && (
+          <Button
+            size="sm"
+            variant="default"
+            onClick={() => void onExport("docx", "biztonsagi_okmany")}
+            title="Földforgalmi tv. szerinti biztonsági okmány („zöld papír") változat"
+          >
+            🟢 Word — biztonsági okmány („zöld papír")
+          </Button>
+        )}
         <Button size="sm" variant="secondary" onClick={() => void onExport("html")}>
           .html
         </Button>
