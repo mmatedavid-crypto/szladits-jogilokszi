@@ -16,6 +16,8 @@ import {
   clearCase,
   emptyCase,
   demoCase,
+  createCase,
+  listCases,
   newId,
 } from "@/lib/legal/state";
 import {
@@ -32,7 +34,9 @@ import { Modulok } from "@/components/legal/Modulok";
 import { JogiAsszisztens } from "@/components/legal/JogiAsszisztens";
 import { UgyvedChecklist } from "@/components/legal/UgyvedChecklist";
 import { IntakeLinkPanel } from "@/components/legal/IntakeLinkPanel";
+import { CaseSwitcher } from "@/components/legal/CaseSwitcher";
 import { Button } from "@/components/ui/button";
+
 
 type StepId = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
