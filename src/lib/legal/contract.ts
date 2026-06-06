@@ -191,9 +191,13 @@ export function generateContractDraft(c: CaseFile): string {
     `  – természetbeni cím: ${c.property.iranyitoszam || "[ir.sz.]"} ${c.property.telepules || "[település]"}, ${c.property.cim || "[utca, hsz.]"};`,
   );
   out.push(`  – helyrajzi szám: ${c.property.helyrajziSzam || "[hrsz.]"};`);
-  out.push(
-    `  – művelési ág / megnevezés: ${c.property.ingatlanTipus || "[típus]"}${c.property.muvelesiAg ? ` / ${c.property.muvelesiAg}` : ""};`,
-  );
+  {
+    const ma = (c.property.muvelesiAg || "").trim();
+    const hasMa = ma.length > 0 && !/^[-—–]+$/.test(ma);
+    out.push(
+      `  – megnevezés: ${c.property.ingatlanTipus || "[típus]"}${hasMa ? `; művelési ág: ${ma}` : ""};`,
+    );
+  }
   out.push(`  – alapterület: ${c.property.alapterulet || "[m²]"} m²;`);
   out.push(`  – eladói tulajdoni hányad: ${c.property.tulajdoniHanyad || "1/1"}.`);
   if (c.property.tarsashaziAlbetet)
