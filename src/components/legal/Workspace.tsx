@@ -273,12 +273,21 @@ export function Workspace() {
               />
             </div>
             <div className="pt-2 border-t border-sidebar-border">
-              <div className="font-semibold text-foreground mb-1">Eljáró ügyvéd</div>
+              <div className="font-semibold text-foreground mb-1">Ügyvédi iroda (letterhead)</div>
+              <p className="text-[10px] text-muted-foreground mb-1">
+                Ez az adatcsomag jelenik meg a generált PDF tetején fejlécként és az ellenjegyzésnél. Szladits-brand a kliensnek küldött szerződésen NEM látszik.
+              </p>
+              <input
+                className="mt-1 w-full rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground"
+                value={c.eljaroUgyved.iroda}
+                onChange={(e) => update((d) => void (d.eljaroUgyved.iroda = e.target.value))}
+                placeholder="Ügyvédi iroda neve"
+              />
               <input
                 className="mt-1 w-full rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground"
                 value={c.eljaroUgyved.nev}
                 onChange={(e) => update((d) => void (d.eljaroUgyved.nev = e.target.value))}
-                placeholder="dr. Vezetéknév Keresztnév"
+                placeholder="dr. Vezetéknév Keresztnév (eljáró ügyvéd)"
               />
               <input
                 className="mt-1 w-full rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground"
@@ -288,15 +297,33 @@ export function Workspace() {
               />
               <input
                 className="mt-1 w-full rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground"
-                value={c.eljaroUgyved.iroda}
-                onChange={(e) => update((d) => void (d.eljaroUgyved.iroda = e.target.value))}
-                placeholder="Ügyvédi iroda neve"
-              />
-              <input
-                className="mt-1 w-full rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground"
                 value={c.eljaroUgyved.irodaCim}
                 onChange={(e) => update((d) => void (d.eljaroUgyved.irodaCim = e.target.value))}
                 placeholder="Iroda címe"
+              />
+              <input
+                className="mt-1 w-full rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground"
+                value={c.eljaroUgyved.telefon ?? ""}
+                onChange={(e) => update((d) => void (d.eljaroUgyved.telefon = e.target.value))}
+                placeholder="Telefon"
+              />
+              <input
+                className="mt-1 w-full rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground"
+                value={c.eljaroUgyved.email ?? ""}
+                onChange={(e) => update((d) => void (d.eljaroUgyved.email = e.target.value))}
+                placeholder="E-mail"
+              />
+              <input
+                className="mt-1 w-full rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground"
+                value={c.eljaroUgyved.website ?? ""}
+                onChange={(e) => update((d) => void (d.eljaroUgyved.website = e.target.value))}
+                placeholder="Weboldal"
+              />
+              <input
+                className="mt-1 w-full rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground"
+                value={c.eljaroUgyved.rovidHeader ?? ""}
+                onChange={(e) => update((d) => void (d.eljaroUgyved.rovidHeader = e.target.value))}
+                placeholder="Rövid header sor (pl. szakterület)"
               />
             </div>
           </div>
