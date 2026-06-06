@@ -29,7 +29,7 @@ function describeParty(p: Party): string {
   }
   return [
     `${p.cegnev || "[cégnév]"} (cégjegyzékszám: ${p.cegjegyzekszam || "[cgj.]"};`,
-    `adószám: ${p.adoszam || "[adószám]"}; statisztikai számjel: ${p.statisztikaiSzamjel || "[KSH]"}; székhely: ${p.szekhely || "[székhely]"};`,
+    `adószám: ${p.adoszam || "[adószám]"}; székhely: ${p.szekhely || "[székhely]"};`,
     `képviseli: ${p.kepviseloNeve || "[képviselő]"}, képviselet módja: ${p.kepviseletModja || "[mód]"})`,
   ].join(" ");
 }
