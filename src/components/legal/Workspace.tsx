@@ -214,14 +214,43 @@ export function Workspace() {
               </li>
             ))}
           </ul>
-          <div className="px-4 py-3 text-xs text-muted-foreground border-t border-sidebar-border">
-            Ügyazonosító:
-            <input
-              className="mt-1 w-full rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground"
-              value={c.ugyAzonosito}
-              onChange={(e) => update((d) => void (d.ugyAzonosito = e.target.value))}
-              placeholder="pl. 2026-001"
-            />
+          <div className="px-4 py-3 text-xs text-muted-foreground border-t border-sidebar-border space-y-3">
+            <div>
+              <label className="block">Ügyazonosító:</label>
+              <input
+                className="mt-1 w-full rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground"
+                value={c.ugyAzonosito}
+                onChange={(e) => update((d) => void (d.ugyAzonosito = e.target.value))}
+                placeholder="pl. 2026-001"
+              />
+            </div>
+            <div className="pt-2 border-t border-sidebar-border">
+              <div className="font-semibold text-foreground mb-1">Eljáró ügyvéd</div>
+              <input
+                className="mt-1 w-full rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground"
+                value={c.eljaroUgyved.nev}
+                onChange={(e) => update((d) => void (d.eljaroUgyved.nev = e.target.value))}
+                placeholder="dr. Vezetéknév Keresztnév"
+              />
+              <input
+                className="mt-1 w-full rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground"
+                value={c.eljaroUgyved.kaszSzam}
+                onChange={(e) => update((d) => void (d.eljaroUgyved.kaszSzam = e.target.value))}
+                placeholder="KASZ szám"
+              />
+              <input
+                className="mt-1 w-full rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground"
+                value={c.eljaroUgyved.iroda}
+                onChange={(e) => update((d) => void (d.eljaroUgyved.iroda = e.target.value))}
+                placeholder="Ügyvédi iroda neve"
+              />
+              <input
+                className="mt-1 w-full rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground"
+                value={c.eljaroUgyved.irodaCim}
+                onChange={(e) => update((d) => void (d.eljaroUgyved.irodaCim = e.target.value))}
+                placeholder="Iroda címe"
+              />
+            </div>
           </div>
         </nav>
 

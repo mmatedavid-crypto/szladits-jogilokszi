@@ -356,7 +356,13 @@ export function generateContractDraft(c: CaseFile): string {
   sections.push(`${nextNo}. ÜGYVÉDI KÖZREMŰKÖDÉS ÉS ELLENJEGYZÉS`);
   sections.push("");
   sections.push(
-    "  A jelen szerződést az eljáró ügyvéd készítette és ellenjegyzi az Üttv. 43. §-a és az Inytv. 32. § (3) bekezdése alapján. Az ügyvéd a Felek személyazonosságát az okmányaik alapján ellenőrizte, és a jognyilatkozatok tartalmáról a Feleket tájékoztatta. A Felek elismerik, hogy az ügyvéd jelen jogügyletben kizárólag okiratszerkesztőként és ellenjegyzőként jár el, és az ügyvéd közreműködését bármelyik Fél részéről történő képviseletként nem értelmezik.",
+    `  ${nextNo}.1. A jelen szerződést ${c.eljaroUgyved.nev || "[eljáró ügyvéd neve]"} (${c.eljaroUgyved.iroda || "[ügyvédi iroda]"}, ${c.eljaroUgyved.irodaCim || "[iroda címe]"}; KASZ: ${c.eljaroUgyved.kaszSzam || "[KASZ szám]"}) eljáró ügyvéd készítette és ellenjegyzi az ügyvédi tevékenységről szóló 2017. évi LXXVIII. törvény (Üttv.) 43. §-a és az ingatlan-nyilvántartásról szóló 1997. évi CXLI. törvény (Inytv.) 32. § (3) bekezdése alapján.`,
+  );
+  sections.push(
+    `  ${nextNo}.2. A jelen szerződés — az ügyvédi ellenjegyzés folytán — ügyvéd által ellenjegyzett magánokiratnak minősül, amely a Pp. 325. § (1) bek. g) pontja szerint teljes bizonyító erővel rendelkezik. Erre tekintettel a szerződés érvényességéhez tanúk közreműködése nem szükséges.`,
+  );
+  sections.push(
+    `  ${nextNo}.3. Az eljáró ügyvéd a Felek személyazonosságát az okmányaik alapján ellenőrizte, a JÜB-rendszerben lekérdezte (az eredményt az ügyiratban dokumentálta), és a jognyilatkozatok tartalmáról a Feleket tájékoztatta. A Felek elismerik, hogy az ügyvéd jelen jogügyletben kizárólag okiratszerkesztőként és ellenjegyzőként jár el, közreműködését bármelyik Fél részéről történő képviseletként nem értelmezik.`,
   );
   sections.push("");
   nextNo++;
@@ -401,17 +407,15 @@ export function generateContractDraft(c: CaseFile): string {
     sections.push(`    ____________________________________   (${p.kind === "termeszetes" ? p.nev || "[név]" : p.cegnev || "[cégnév]"})`),
   );
   sections.push("");
-  sections.push("  Tanúk (amennyiben szükséges — pl. magánokirati alakszerűségi követelmények miatt):");
-  sections.push("    1. tanú: név: __________________________ lakcím: __________________________ aláírás: __________________");
-  sections.push("    2. tanú: név: __________________________ lakcím: __________________________ aláírás: __________________");
-  sections.push("");
   sections.push("ÜGYVÉDI ELLENJEGYZÉS");
+  sections.push("(2017. évi LXXVIII. tv. — Üttv. 43. § alapján — teljes bizonyító erejű magánokirat, tanúk nem szükségesek)");
   sections.push("");
-  sections.push("  Készítettem és ellenjegyzem a 2017. évi LXXVIII. törvény (Üttv.) 43. §-a alapján:");
-  sections.push("    Eljáró ügyvéd: ____________________________");
-  sections.push("    KASZ szám: ________________________");
-  sections.push("    Iroda: ____________________________________");
-  sections.push("    Kelt: ____________   Hely: ____________");
+  sections.push(`  Készítettem és ellenjegyzem:`);
+  sections.push(`    Eljáró ügyvéd: ${c.eljaroUgyved.nev || "____________________________"}`);
+  sections.push(`    KASZ szám: ${c.eljaroUgyved.kaszSzam || "________________________"}`);
+  sections.push(`    Iroda: ${c.eljaroUgyved.iroda || "____________________________________"}`);
+  sections.push(`    Iroda címe: ${c.eljaroUgyved.irodaCim || "____________________________________"}`);
+  sections.push(`    Kelt: ____________   Hely: ${c.property.telepules || "____________"}`);
   sections.push("    P.H. és aláírás: __________________________");
   sections.push("");
   sections.push(

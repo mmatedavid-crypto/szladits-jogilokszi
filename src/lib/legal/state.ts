@@ -7,6 +7,7 @@ export function emptyCase(): CaseFile {
   return {
     ugyAzonosito: "",
     letrehozva: new Date().toISOString(),
+    eljaroUgyved: { nev: "", kaszSzam: "", iroda: "", irodaCim: "" },
     transactionTypes: [],
     parties: [],
     property: {
@@ -96,6 +97,7 @@ export function loadCase(): CaseFile {
     return {
       ...base,
       ...parsed,
+      eljaroUgyved: { ...base.eljaroUgyved, ...(parsed.eljaroUgyved ?? {}) },
       modulok: { ...base.modulok, ...(parsed.modulok ?? {}) },
     } as CaseFile;
   } catch {
@@ -124,6 +126,12 @@ export function newId(prefix = "p"): string {
 export function demoCase(): CaseFile {
   const base = emptyCase();
   base.ugyAzonosito = "DEMO-2026-001";
+  base.eljaroUgyved = {
+    nev: "dr. Szladits Anna",
+    kaszSzam: "36071234",
+    iroda: "Szladits Ügyvédi Iroda",
+    irodaCim: "1051 Budapest, Október 6. utca 12. II/4.",
+  };
   base.transactionTypes = ["lakas", "tarsashazi_albetet", "hitellel_erintett"];
   const elado: NaturalPerson = {
     kind: "termeszetes",

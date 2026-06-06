@@ -180,9 +180,17 @@ export interface SpecialRules {
 
 import type { ModulokState } from "./modulok";
 
+export interface EljaroUgyved {
+  nev: string;
+  kaszSzam: string;
+  iroda: string;
+  irodaCim: string;
+}
+
 export interface CaseFile {
   ugyAzonosito: string;
   letrehozva: string;
+  eljaroUgyved: EljaroUgyved;
   transactionTypes: TransactionType[];
   parties: Party[];
   property: Property;
