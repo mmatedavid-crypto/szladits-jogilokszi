@@ -1019,6 +1019,42 @@ function Step6({
             <Check checked={f.tulajdonszerzesiKorlat} onChange={(v) => patchF("tulajdonszerzesiKorlat", v)} label="Tulajdonszerzési korlát érintett" />
             <Check checked={f.nyilatkozatok} onChange={(v) => patchF("nyilatkozatok", v)} label="Nyilatkozatok szükségesek" />
           </div>
+
+          <div className="mt-5 pt-4 border-t border-accent/30">
+            <h4 className="text-xs font-semibold text-accent mb-2">
+              Nyomtatási változat (Földforgalmi tv. szerinti okiratkiállítás)
+            </h4>
+            <p className="text-xs text-muted-foreground mb-2">
+              Földforgalmi szerződést a 47/2014. (II. 26.) Korm. rendelet szerinti biztonsági
+              okmányon („zöld papír") kell véglegesíteni. A sima nyomtatott változat belső
+              munkapéldányként, egyeztetésre szolgál.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <Field label="Nyomtatási változat">
+                <Select
+                  value={f.nyomtatasiValtozat}
+                  onChange={(e) => patchF("nyomtatasiValtozat", e.target.value)}
+                >
+                  <option value="sima">Sima nyomtatott (munkapéldány)</option>
+                  <option value="biztonsagi_okmany">Biztonsági okmány („zöld papír")</option>
+                </Select>
+              </Field>
+              <Field label="Biztonsági okmány sorszáma">
+                <TextInput
+                  value={f.biztonsagiOkmanySorszam}
+                  onChange={(e) => patchF("biztonsagiOkmanySorszam", e.target.value)}
+                  placeholder="pl. AB 1234567"
+                />
+              </Field>
+              <Field label="Kiállító / forgalmazó">
+                <TextInput
+                  value={f.biztonsagiOkmanyKiallito}
+                  onChange={(e) => patchF("biztonsagiOkmanyKiallito", e.target.value)}
+                  placeholder="pl. Pénzjegynyomda"
+                />
+              </Field>
+            </div>
+          </div>
         </div>
       ) : (
         <p className="text-xs text-muted-foreground mb-6">
