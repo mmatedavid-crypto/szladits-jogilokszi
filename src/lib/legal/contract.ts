@@ -389,7 +389,7 @@ export function generateContractDraft(c: CaseFile): string {
     ),
   );
   if (c.possession.feltetel)
-    out.push(sub(s, `Birtokbaadás feltétele: ${c.possession.feltetel}.`));
+    out.push(sub(s, `Birtokbaadás feltétele: ${stripTrailingPunct(c.possession.feltetel)}.`));
   if (c.possession.kozmuAtiras)
     out.push(
       sub(
