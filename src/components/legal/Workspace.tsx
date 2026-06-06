@@ -1140,7 +1140,7 @@ function Step7({
             size="sm"
             variant="default"
             onClick={() => void onExport("docx", "biztonsagi_okmany")}
-            title="Földforgalmi tv. szerinti biztonsági okmány („zöld papír") változat"
+            title='Földforgalmi tv. szerinti biztonsági okmány („zöld papír") változat'
           >
             🟢 Word — biztonsági okmány („zöld papír")
           </Button>
