@@ -206,6 +206,32 @@ export function loadCase(): CaseFile {
   return emptyCase();
 }
 
+/** Megkeresi azt az ügyet, amelyhez egy adott intake token tartozik. */
+export function findCaseByIntakeToken(token: string): CaseFile | null {
+  if (!token) return null;
+  const store = readStore();
+  for (const c of Object.values(store.cases)) {
+    if (
+      c.intake?.elado?.token === token ||
+      c.intake?.vevo?.token === token
+    ) {
+      return c;
+    }
+  }
+  return null;
+}
+
+export function saveCaseById(c: CaseFile) {
+  if (typeof window === "undefined" || !c.id) return;
+  const store = readStore();
+  store.cases[c.id] = {
+    ...c,
+    utoljaraMentve: new Date().toISOString(),
+  };
+  writeStore(store);
+}
+
+
 export function saveCase(c: CaseFile) {
   if (typeof window === "undefined") return;
   const store = readStore();
