@@ -284,7 +284,7 @@ function drawSignatures(ctx: RenderCtx) {
 
   vspace(ctx, 6);
   // Szerződéskötés (aláírás) napja — NEM a birtokbaadás dátuma.
-  const signingDate = c.alairasDatum || c.letrehozva;
+  const signingDate = c.letrehozva;
   drawText(
     ctx,
     `Kelt: ${c.property.telepules || "____________"}, ${formatHuDate(signingDate)}`,
