@@ -121,13 +121,19 @@ export function Workspace() {
     setOutputTab("szerzodes");
     setTimeout(() => window.print(), 50);
   };
-  const exportFile = (kind: "txt" | "html") => {
+  const exportFile = async (kind: "txt" | "html" | "docx") => {
     const filename = `${c.ugyAzonosito || "tervezet"}-szerzodes.${kind}`;
-    const content =
-      kind === "txt"
-        ? contract
-        : `<!doctype html><html lang="hu"><head><meta charset="utf-8"><title>${c.ugyAzonosito || "Szerződéstervezet"}</title><style>body{font-family:Georgia,serif;max-width:800px;margin:32px auto;padding:24px;white-space:pre-wrap;color:#1a1a2e;}h1{font-size:18px;}</style></head><body><pre>${contract.replace(/[<>&]/g, (s) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" })[s] as string)}</pre></body></html>`;
-    const blob = new Blob([content], { type: kind === "txt" ? "text/plain" : "text/html" });
+    let blob: Blob;
+    if (kind === "docx") {
+      const { generateContractDocx } = await import("@/lib/legal/docx");
+      blob = await generateContractDocx(contract, c.ugyAzonosito);
+    } else {
+      const content =
+        kind === "txt"
+          ? contract
+          : `<!doctype html><html lang="hu"><head><meta charset="utf-8"><title>${c.ugyAzonosito || "Szerződéstervezet"}</title><style>body{font-family:Georgia,serif;max-width:800px;margin:32px auto;padding:24px;white-space:pre-wrap;color:#1a1a2e;}h1{font-size:18px;}</style></head><body><pre>${contract.replace(/[<>&]/g, (s) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" })[s] as string)}</pre></body></html>`;
+      blob = new Blob([content], { type: kind === "txt" ? "text/plain" : "text/html" });
+    }
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -174,6 +180,9 @@ export function Workspace() {
             </Button>
             <Button size="sm" variant="secondary" onClick={handlePrint}>
               Nyomtatás / PDF
+            </Button>
+            <Button size="sm" variant="default" onClick={() => exportFile("docx")}>
+              📝 Export Word (.docx)
             </Button>
             <Button size="sm" variant="secondary" onClick={() => exportFile("html")}>
               Export .html
