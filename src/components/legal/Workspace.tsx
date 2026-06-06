@@ -31,6 +31,7 @@ import { generateContractDraft } from "@/lib/legal/contract";
 import { Modulok } from "@/components/legal/Modulok";
 import { JogiAsszisztens } from "@/components/legal/JogiAsszisztens";
 import { UgyvedChecklist } from "@/components/legal/UgyvedChecklist";
+import { IntakeLinkPanel } from "@/components/legal/IntakeLinkPanel";
 import { Button } from "@/components/ui/button";
 
 type StepId = 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -159,16 +160,10 @@ export function Workspace() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="default" onClick={() => setChecklistOpen(true)}>
-              ✅ Mielőtt elküldöm az ügyvédnek
+              ✅ Ügyvédi ellenőrző lista
             </Button>
             <Button size="sm" variant="default" onClick={() => setChatOpen(true)}>
               💬 Jogi asszisztens (AI)
-            </Button>
-            <Button size="sm" variant="secondary" onClick={handleLoadDemo}>
-              Demo adatok betöltése
-            </Button>
-            <Button size="sm" variant="secondary" onClick={handleClear}>
-              Mentés törlése
             </Button>
             <Button
               size="sm"
@@ -178,22 +173,13 @@ export function Workspace() {
                 setOutputTab("szerzodes");
               }}
             >
-              Szerződés generálása
+              Dokumentumcsomag megnyitása
             </Button>
-            <Button size="sm" variant="secondary" onClick={handleCopy}>
-              Másolás vágólapra
+            <Button size="sm" variant="secondary" onClick={handleLoadDemo}>
+              Demo adatok betöltése
             </Button>
-            <Button size="sm" variant="secondary" onClick={handlePrint}>
-              Nyomtatás / PDF
-            </Button>
-            <Button size="sm" variant="default" onClick={() => exportFile("docx")}>
-              📝 Export Word (.docx)
-            </Button>
-            <Button size="sm" variant="secondary" onClick={() => exportFile("html")}>
-              Export .html
-            </Button>
-            <Button size="sm" variant="secondary" onClick={() => exportFile("txt")}>
-              Export .txt
+            <Button size="sm" variant="secondary" onClick={handleClear}>
+              Mentés törlése
             </Button>
           </div>
         </div>
@@ -263,6 +249,7 @@ export function Workspace() {
         <main className="flex-1 grid grid-cols-1 xl:grid-cols-[1fr_360px]">
           <section className="p-6 overflow-y-auto">
             <DraftBanner />
+            <IntakeLinkPanel c={c} update={update} />
             {step === 1 && <Step1 c={c} update={update} />}
             {step === 2 && <Step2 c={c} update={update} />}
             {step === 3 && <Step3 c={c} update={update} />}
@@ -285,6 +272,9 @@ export function Workspace() {
                 missing={missing}
                 risks={risks}
                 attachments={attachments}
+                onCopy={handleCopy}
+                onPrint={handlePrint}
+                onExport={exportFile}
               />
             )}
             <div className="mt-8 flex justify-between">
@@ -1059,6 +1049,9 @@ function Step7({
   missing,
   risks,
   attachments,
+  onCopy,
+  onPrint,
+  onExport,
 }: {
   tab: "szerzodes" | "hianyzo" | "kockazat" | "mellekletek" | "osszefoglalo";
   setTab: (t: "szerzodes" | "hianyzo" | "kockazat" | "mellekletek" | "osszefoglalo") => void;
@@ -1067,11 +1060,14 @@ function Step7({
   missing: ReturnType<typeof detectMissingFields>;
   risks: ReturnType<typeof generateRiskFlags>;
   attachments: ReturnType<typeof generateAttachmentList>;
+  onCopy: () => void;
+  onPrint: () => void;
+  onExport: (kind: "txt" | "html" | "docx") => Promise<void>;
 }) {
   const tabs: { id: typeof tab; label: string }[] = [
     { id: "szerzodes", label: "Szerződéstervezet" },
     { id: "hianyzo", label: `Hiányzó adatok (${missing.length})` },
-    { id: "kockazat", label: `Kockázati lista (${risks.length})` },
+    { id: "kockazat", label: `Kockázati pontok (${risks.length})` },
     { id: "mellekletek", label: `Mellékletlista (${attachments.length})` },
     { id: "osszefoglalo", label: "Ügyleti összefoglaló" },
   ];
@@ -1084,7 +1080,27 @@ function Step7({
 
   return (
     <div>
-      <SectionTitle>Kimenetek</SectionTitle>
+      <SectionTitle>Dokumentumcsomag</SectionTitle>
+      <div className="mb-4 rounded-md border border-border bg-card p-3 flex flex-wrap gap-2 items-center">
+        <span className="text-xs text-muted-foreground mr-2">
+          A teljes dokumentumcsomag exportja (tervezet — ügyvédi ellenjegyzésre vár):
+        </span>
+        <Button size="sm" variant="default" onClick={() => void onExport("docx")}>
+          📝 Word (.docx)
+        </Button>
+        <Button size="sm" variant="secondary" onClick={() => void onExport("html")}>
+          .html
+        </Button>
+        <Button size="sm" variant="secondary" onClick={() => void onExport("txt")}>
+          .txt
+        </Button>
+        <Button size="sm" variant="secondary" onClick={onPrint}>
+          Nyomtatás / PDF
+        </Button>
+        <Button size="sm" variant="outline" onClick={onCopy}>
+          Másolás vágólapra
+        </Button>
+      </div>
       <div className="flex flex-wrap gap-1 mb-4 border-b border-border">
         {tabs.map((t) => (
           <button

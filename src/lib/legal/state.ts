@@ -84,6 +84,10 @@ export function emptyCase(): CaseFile {
       },
     },
     modulok: emptyModulok(),
+    intake: {
+      elado: { token: "", letrehozva: "", utoljaraMentve: "", beadva: false, beadvaIdo: "" },
+      vevo: { token: "", letrehozva: "", utoljaraMentve: "", beadva: false, beadvaIdo: "" },
+    },
   };
 }
 
@@ -99,6 +103,10 @@ export function loadCase(): CaseFile {
       ...parsed,
       eljaroUgyved: { ...base.eljaroUgyved, ...(parsed.eljaroUgyved ?? {}) },
       modulok: { ...base.modulok, ...(parsed.modulok ?? {}) },
+      intake: {
+        elado: { ...base.intake.elado, ...(parsed.intake?.elado ?? {}) },
+        vevo: { ...base.intake.vevo, ...(parsed.intake?.vevo ?? {}) },
+      },
     } as CaseFile;
   } catch {
     return emptyCase();
