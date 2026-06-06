@@ -246,18 +246,18 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
   },
   {
     id: "bank-loan-suspension",
-    cim: "Bankhitel és függőben tartás",
+    cim: "Bankhitel és tulajdonjog-fenntartás (vevői jog)",
     leiras:
-      "Banki finanszírozás, bejegyzési engedély ügyvédi letétbe helyezése és függőben tartási konstrukció.",
+      "Banki finanszírozás, bejegyzési engedély ügyvédi letétbe helyezése, Ptk. 6:216–6:217. § szerinti tulajdonjog-fenntartás és vevői jog bejegyzése az új Inytv. (2021. évi C. tv.) alapján.",
     triggerLeiras: "payment.bankhitelVan === true vagy hitellel érintett ügytípus.",
     reviewStatus: "ai_prelinked",
     riskLevel: "kritikus",
-    lawRef: lawRef("1997. évi CXLI. törvény", "Inytv.", "47/A. §", "Függőben tartás", NJT.inytv),
+    lawRef: lawRef("2021. évi C. törvény", "új Inytv.", "vevői jog", "Tulajdonjog-fenntartáshoz kapcsolódó vevői jog", NJT.inytv),
     relatedLawRefs: [
       lawRef("2017. évi LXXVIII. törvény", "Üttv.", "ügyvédi letét", "Ügyvédi letét", NJT.uttv),
     ],
     activeWhen: (c) => c.payment.bankhitelVan || c.transactionTypes.includes("hitellel_erintett"),
-    auditTerms: ["banki hitel", "függőben tartás", "47/A. §"],
+    auditTerms: ["banki hitel", "tulajdonjog-fenntartás", "vevői jog"],
     ugyvediKerdesek: [
       "A banki folyósítási feltételek és a bejegyzési engedély kiadása összhangban vannak-e?",
       "Kell-e bank-specifikus klauzula az adott finanszírozó feltételeihez?",
