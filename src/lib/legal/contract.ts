@@ -204,10 +204,9 @@ export function generateContractDraft(c: CaseFile): string {
     out.push(
       sub(
         s,
-        "Az adásvételhez kapcsolódóan teremgarázs- és/vagy tárolóhasználat is átszáll a Vevőre. A pontos jogi minősítés (külön albetét, eszmei hányad, vagy kizárólagos használati jog) a tulajdoni lap alapján: " +
-          (c.property.helyrajziSzam
-            ? `${c.property.helyrajziSzam} hrsz.`
-            : LEGAL_REVIEW("teremgarázs/tároló jogi státusza — tulajdoni lapon ellenőrizendő")),
+        "Az adásvétel részeként a Vevőre átszáll a teremgarázs és tároló használatának joga. A teremgarázs/tároló pontos jogi minősítését (külön albetét; eszmei hányad; kizárólagos használati jog) " +
+          REVIEW("teremgarázs/tároló jogi státusza (külön albetét / eszmei hányad / kizárólagos használati jog) — tulajdoni lap alapján rögzítendő") +
+          ".",
       ),
     );
   }
