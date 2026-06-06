@@ -28,6 +28,8 @@ import {
   generateCaseSummary,
 } from "@/lib/legal/logic";
 import { generateContractDraft } from "@/lib/legal/contract";
+import { Modulok } from "@/components/legal/Modulok";
+import { JogiAsszisztens } from "@/components/legal/JogiAsszisztens";
 import { Button } from "@/components/ui/button";
 
 type StepId = 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -60,6 +62,7 @@ export function Workspace() {
   const [c, setC] = useState<CaseFile>(() => emptyCase());
   const [step, setStep] = useState<StepId>(1);
   const [hydrated, setHydrated] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   const [outputTab, setOutputTab] =
     useState<"szerzodes" | "hianyzo" | "kockazat" | "mellekletek" | "osszefoglalo">(
       "szerzodes",
@@ -147,6 +150,9 @@ export function Workspace() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="default" onClick={() => setChatOpen(true)}>
+              💬 Jogi asszisztens (AI)
+            </Button>
             <Button size="sm" variant="secondary" onClick={handleLoadDemo}>
               Demo adatok betöltése
             </Button>
@@ -219,7 +225,14 @@ export function Workspace() {
             {step === 3 && <Step3 c={c} update={update} />}
             {step === 4 && <Step4 c={c} update={update} />}
             {step === 5 && <Step5 c={c} update={update} />}
-            {step === 6 && <Step6 c={c} update={update} />}
+            {step === 6 && (
+              <>
+                <Modulok c={c} update={update} />
+                <div className="mt-8 pt-6 border-t border-border">
+                  <Step6 c={c} update={update} />
+                </div>
+              </>
+            )}
             {step === 7 && (
               <Step7
                 tab={outputTab}
