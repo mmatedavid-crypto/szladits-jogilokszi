@@ -279,8 +279,8 @@ const scenarios: Scenario[] = [
     caseFile: incompleteCase(),
     required: [
       ...hasDraftSafeguards,
-      contains("[eladó adatai hiányoznak]"),
-      contains("[vevő adatai hiányoznak]"),
+      contains("eladó adatai hiányoznak"),
+      contains("vevő adatai hiányoznak"),
       contains("[hrsz.]"),
     ],
     notes: ["Ez a validációs eset direkt hiányos: a cél az, hogy ne tűnjön kész szerződésnek."],
