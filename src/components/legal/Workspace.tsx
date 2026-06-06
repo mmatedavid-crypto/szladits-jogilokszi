@@ -160,16 +160,10 @@ export function Workspace() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="default" onClick={() => setChecklistOpen(true)}>
-              ✅ Mielőtt elküldöm az ügyvédnek
+              ✅ Ügyvédi ellenőrző lista
             </Button>
             <Button size="sm" variant="default" onClick={() => setChatOpen(true)}>
               💬 Jogi asszisztens (AI)
-            </Button>
-            <Button size="sm" variant="secondary" onClick={handleLoadDemo}>
-              Demo adatok betöltése
-            </Button>
-            <Button size="sm" variant="secondary" onClick={handleClear}>
-              Mentés törlése
             </Button>
             <Button
               size="sm"
@@ -179,22 +173,13 @@ export function Workspace() {
                 setOutputTab("szerzodes");
               }}
             >
-              Szerződés generálása
+              Dokumentumcsomag megnyitása
             </Button>
-            <Button size="sm" variant="secondary" onClick={handleCopy}>
-              Másolás vágólapra
+            <Button size="sm" variant="secondary" onClick={handleLoadDemo}>
+              Demo adatok betöltése
             </Button>
-            <Button size="sm" variant="secondary" onClick={handlePrint}>
-              Nyomtatás / PDF
-            </Button>
-            <Button size="sm" variant="default" onClick={() => exportFile("docx")}>
-              📝 Export Word (.docx)
-            </Button>
-            <Button size="sm" variant="secondary" onClick={() => exportFile("html")}>
-              Export .html
-            </Button>
-            <Button size="sm" variant="secondary" onClick={() => exportFile("txt")}>
-              Export .txt
+            <Button size="sm" variant="secondary" onClick={handleClear}>
+              Mentés törlése
             </Button>
           </div>
         </div>
