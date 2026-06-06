@@ -15,6 +15,13 @@ function fmt(n: string, ccy: string) {
   return `${num.toLocaleString("hu-HU")} ${ccy}`;
 }
 
+function formatDraftDate(value?: string): string {
+  if (!value) return "[dátum]";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "[dátum]";
+  return date.toLocaleDateString("hu-HU", { timeZone: "Europe/Budapest" });
+}
+
 function describeParty(p: Party): string {
   if (p.kind === "termeszetes") {
     const age = calculateAge(p.szuletesiDatum);
@@ -76,7 +83,7 @@ export function generateContractDraft(c: CaseFile): string {
   sections.push("(tervezet — ügyvédi ellenőrzésre és ellenjegyzésre előkészítve)");
   sections.push("");
   sections.push(
-    `Ügyazonosító: ${c.ugyAzonosito || "[ügyazonosító]"}    Készítés dátuma: ${new Date().toLocaleDateString("hu-HU")}    Hely: ${c.property.telepules || "[hely]"}`,
+    `Ügyazonosító: ${c.ugyAzonosito || "[ügyazonosító]"}    Készítés dátuma: ${formatDraftDate(c.letrehozva)}    Hely: ${c.property.telepules || "[hely]"}`,
   );
   sections.push("");
   sections.push(
