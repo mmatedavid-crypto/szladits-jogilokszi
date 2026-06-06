@@ -181,6 +181,9 @@ export function Workspace() {
             <Button size="sm" variant="secondary" onClick={handlePrint}>
               Nyomtatás / PDF
             </Button>
+            <Button size="sm" variant="default" onClick={() => exportFile("docx")}>
+              📝 Export Word (.docx)
+            </Button>
             <Button size="sm" variant="secondary" onClick={() => exportFile("html")}>
               Export .html
             </Button>
