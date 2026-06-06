@@ -270,15 +270,24 @@ function drawSignatureGrid(
   }
 }
 
+function formatHuDate(value?: string): string {
+  if (!value) return "____________________";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleDateString("hu-HU", { timeZone: "Europe/Budapest" });
+}
+
 function drawSignatures(ctx: RenderCtx) {
   const c = ctx.c;
   const eladok = c.parties.filter((p) => p.szerep === "elado");
   const vevok = c.parties.filter((p) => p.szerep === "vevo");
 
   vspace(ctx, 6);
+  // Szerződéskötés (aláírás) napja — NEM a birtokbaadás dátuma.
+  const signingDate = c.alairasDatum || c.letrehozva;
   drawText(
     ctx,
-    `Kelt: ${c.property.telepules || "____________"}, ${c.possession.datum || "____________________"}`,
+    `Kelt: ${c.property.telepules || "____________"}, ${formatHuDate(signingDate)}`,
     { size: 11, align: "center" },
   );
   vspace(ctx, 6);
@@ -294,8 +303,14 @@ function drawSignatures(ctx: RenderCtx) {
     vevok.map((p) => partyLabel(p as never)),
   );
 
-  // Ügyvédi ellenjegyzés — vizuálisan elválasztva
-  vspace(ctx, 8);
+  // Ügyvédi ellenjegyzés — keep-together: ne törjön szét csúnyán két oldal közt.
+  // ~70 mm szükséges (cím + alcím + adatok + aláírás vonal + P.H.).
+  const REQUIRED_MM = 70;
+  if (ctx.y + REQUIRED_MM > PAGE_H - MARGIN_BOTTOM) {
+    newPage(ctx);
+  } else {
+    vspace(ctx, 8);
+  }
   hrule(ctx, [60, 60, 60]);
   vspace(ctx, 3);
   drawText(ctx, "ÜGYVÉDI ELLENJEGYZÉS", { bold: true, size: 12, align: "center" });
