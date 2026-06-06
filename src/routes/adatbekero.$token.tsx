@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { loadCase, saveCase, emptyCase } from "@/lib/legal/state";
+import { findCaseByIntakeToken, saveCaseById, emptyCase } from "@/lib/legal/state";
 import {
   findRoleByToken,
   findPartyForRole,
@@ -26,9 +26,10 @@ function IntakePage() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setC(loadCase());
+    const found = findCaseByIntakeToken(token);
+    if (found) setC(found);
     setHydrated(true);
-  }, []);
+  }, [token]);
 
   const role = useMemo(() => (hydrated ? findRoleByToken(c, token) : null), [c, token, hydrated]);
 
@@ -37,10 +38,11 @@ function IntakePage() {
       const copy: CaseFile = JSON.parse(JSON.stringify(prev));
       fn(copy);
       if (role) copy.intake[role].utoljaraMentve = new Date().toISOString();
-      saveCase(copy);
+      saveCaseById(copy);
       return copy;
     });
   };
+
 
   if (!hydrated) {
     return <Shell><p className="text-sm text-muted-foreground">Betöltés…</p></Shell>;

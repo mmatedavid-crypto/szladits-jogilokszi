@@ -16,6 +16,8 @@ import {
   clearCase,
   emptyCase,
   demoCase,
+  createCase,
+  listCases,
   newId,
 } from "@/lib/legal/state";
 import {
@@ -32,7 +34,9 @@ import { Modulok } from "@/components/legal/Modulok";
 import { JogiAsszisztens } from "@/components/legal/JogiAsszisztens";
 import { UgyvedChecklist } from "@/components/legal/UgyvedChecklist";
 import { IntakeLinkPanel } from "@/components/legal/IntakeLinkPanel";
+import { CaseSwitcher } from "@/components/legal/CaseSwitcher";
 import { Button } from "@/components/ui/button";
+
 
 type StepId = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
@@ -72,7 +76,13 @@ export function Workspace() {
     );
 
   useEffect(() => {
-    setC(loadCase());
+    let loaded = loadCase();
+    // Ha még nincs egyetlen mentett ügy sem, hozzunk létre egy újat,
+    // hogy a CaseSwitcher tudjon közte és új ügyek között váltani.
+    if (listCases().length === 0) {
+      loaded = createCase("Új ügy");
+    }
+    setC(loaded);
     setHydrated(true);
   }, []);
 
@@ -94,11 +104,26 @@ export function Workspace() {
     });
   };
 
-  const handleLoadDemo = () => setC(demoCase());
-  const handleClear = () => {
-    clearCase();
-    setC(emptyCase());
+  const handleLoadDemo = () => {
+    // A demo adatok az aktuális ügybe töltődnek (megőrizve az id-t),
+    // hogy ne hozzon létre minden klikk új duplikátumot.
+    const demo = demoCase();
+    demo.id = c.id;
+    demo.cimke = "Demo — Kovács / Szabó";
+    setC(demo);
   };
+  const handleClear = () => {
+    // Csak az aktív ügyet törli.
+    clearCase();
+    // Töltsünk be valamit, hogy ne maradjon árva állapot.
+    const remaining = listCases();
+    if (remaining.length > 0) {
+      setC(loadCase());
+    } else {
+      setC(createCase("Új ügy"));
+    }
+  };
+
   const handleCopy = () => {
     const text =
       outputTab === "szerzodes"
@@ -158,7 +183,12 @@ export function Workspace() {
               Belső okiratszerkesztési tesztverzió ügyvédi irodák számára — szabálylogikával támogatott okiratszerkesztési demo. Jogi review szükséges.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <CaseSwitcher
+              current={c}
+              saveCurrent={() => saveCase(c)}
+              onLoaded={(loaded) => setC(loaded)}
+            />
             <Button size="sm" variant="default" onClick={() => setChecklistOpen(true)}>
               ✅ Ügyvédi ellenőrző lista
             </Button>
@@ -179,9 +209,10 @@ export function Workspace() {
               Demo adatok betöltése
             </Button>
             <Button size="sm" variant="secondary" onClick={handleClear}>
-              Mentés törlése
+              Aktív ügy törlése
             </Button>
           </div>
+
         </div>
       </header>
 

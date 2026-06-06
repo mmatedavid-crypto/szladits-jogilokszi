@@ -201,6 +201,9 @@ export interface IntakeLinks {
 }
 
 export interface CaseFile {
+  id?: string;
+  cimke?: string;
+  utoljaraMentve?: string;
   ugyAzonosito: string;
   letrehozva: string;
   eljaroUgyved: EljaroUgyved;
@@ -213,6 +216,7 @@ export interface CaseFile {
   modulok: ModulokState;
   intake: IntakeLinks;
 }
+
 
 export type Severity = "alacsony" | "kozepes" | "magas" | "kritikus";
 
