@@ -153,10 +153,15 @@ export function generateContractDraft(c: CaseFile): string {
   if (cegek.length > 0) {
     cegek.forEach((co) => {
       if (co.kind !== "ceg") return;
+      const mode = (co.kepviseletModja || "").toLowerCase();
+      let kepvSzov: string;
+      if (mode.includes("önál") || mode.includes("onal")) kepvSzov = "önállóan";
+      else if (mode.includes("együt") || mode.includes("egyut")) kepvSzov = "együttesen";
+      else kepvSzov = REVIEW("cég képviseleti módja (önálló vagy együttes) — cégkivonat alapján rögzítendő");
       out.push(
         sub(
           s,
-          `A ${co.cegnev || "[cégnév]"} (cégjegyzékszám: ${co.cegjegyzekszam || "[cgj.]"}) nyilatkozik, hogy a jelen szerződés megkötése a társaság rendes ügymenetébe tartozik, létesítő okiratával és a hatályos cégjegyzékkel összhangban áll; képviselője a cégkivonat és az aláírási címpéldány alapján önállóan/együttesen jogosult a társaság képviseletére. A cégkivonat kelte: ${co.cegkivonatDatuma || "[dátum]"}.`,
+          `A ${co.cegnev || "[cégnév]"} (cégjegyzékszám: ${co.cegjegyzekszam || "[cgj.]"}) nyilatkozik, hogy a jelen szerződés megkötése a társaság rendes ügymenetébe tartozik, létesítő okiratával és a hatályos cégjegyzékkel összhangban áll; képviselője a cégkivonat és az aláírási címpéldány alapján ${kepvSzov} jogosult a társaság képviseletére. A cégkivonat kelte: ${co.cegkivonatDatuma || "[dátum]"}.`,
         ),
       );
     });
