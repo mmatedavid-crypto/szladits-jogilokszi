@@ -31,6 +31,7 @@ import { generateContractDraft } from "@/lib/legal/contract";
 import { Modulok } from "@/components/legal/Modulok";
 import { JogiAsszisztens } from "@/components/legal/JogiAsszisztens";
 import { UgyvedChecklist } from "@/components/legal/UgyvedChecklist";
+import { IntakeLinkPanel } from "@/components/legal/IntakeLinkPanel";
 import { Button } from "@/components/ui/button";
 
 type StepId = 1 | 2 | 3 | 4 | 5 | 6 | 7;
