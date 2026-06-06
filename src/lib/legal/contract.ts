@@ -720,6 +720,11 @@ export function generateContractDraft(c: CaseFile): string {
     "— TERVEZET vége. Ügyvédi felülvizsgálat és ellenjegyzés nélkül nem használható. —",
   );
 
-  // Sanitize any accidental triple-dot or stray patterns
-  return out.join("\n").replace(/\.{4,}/g, "…").replace(/ {2,}\n/g, "\n");
+  // Sanitize: collapse double punctuation, stray ellipses, double spaces.
+  return out
+    .join("\n")
+    .replace(/\.{4,}/g, "…")
+    .replace(/([.!?,;:])\1+/g, "$1")
+    .replace(/\s+([.,;:!?])/g, "$1")
+    .replace(/ {2,}\n/g, "\n");
 }
