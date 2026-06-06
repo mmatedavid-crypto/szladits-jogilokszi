@@ -1,7 +1,7 @@
 import type { CaseFile, NaturalPerson, Company } from "./types";
 import { emptyModulok } from "./modulok";
 
-const STORAGE_KEY = "szladits.casefile.v2";
+
 
 export function emptyCase(): CaseFile {
   return {
