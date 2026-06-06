@@ -103,6 +103,10 @@ export function loadCase(): CaseFile {
       ...parsed,
       eljaroUgyved: { ...base.eljaroUgyved, ...(parsed.eljaroUgyved ?? {}) },
       modulok: { ...base.modulok, ...(parsed.modulok ?? {}) },
+      intake: {
+        elado: { ...base.intake.elado, ...(parsed.intake?.elado ?? {}) },
+        vevo: { ...base.intake.vevo, ...(parsed.intake?.vevo ?? {}) },
+      },
     } as CaseFile;
   } catch {
     return emptyCase();
