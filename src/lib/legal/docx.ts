@@ -58,7 +58,6 @@ function h1(text: string) {
         bold: true,
         font: FONT,
         size: 32, // 16pt
-        characterSpacing: 30,
       }),
     ],
   });
@@ -275,7 +274,6 @@ function signatureBlock(c: CaseFile, variant: ContractDocxVariant): Paragraph[] 
           bold: true,
           font: FONT,
           size: 24,
-          characterSpacing: 30,
         }),
       ],
     }),
