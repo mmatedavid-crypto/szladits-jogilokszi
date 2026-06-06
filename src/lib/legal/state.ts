@@ -7,6 +7,7 @@ export function emptyCase(): CaseFile {
   return {
     ugyAzonosito: "",
     letrehozva: new Date().toISOString(),
+    eljaroUgyved: { nev: "", kaszSzam: "", iroda: "", irodaCim: "" },
     transactionTypes: [],
     parties: [],
     property: {
