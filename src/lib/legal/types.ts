@@ -187,6 +187,19 @@ export interface EljaroUgyved {
   irodaCim: string;
 }
 
+export interface IntakeStatus {
+  token: string;
+  letrehozva: string;
+  utoljaraMentve: string;
+  beadva: boolean;
+  beadvaIdo: string;
+}
+
+export interface IntakeLinks {
+  elado: IntakeStatus;
+  vevo: IntakeStatus;
+}
+
 export interface CaseFile {
   ugyAzonosito: string;
   letrehozva: string;
@@ -198,6 +211,7 @@ export interface CaseFile {
   possession: Possession;
   special: SpecialRules;
   modulok: ModulokState;
+  intake: IntakeLinks;
 }
 
 export type Severity = "alacsony" | "kozepes" | "magas" | "kritikus";
