@@ -249,6 +249,7 @@ export function Workspace() {
         <main className="flex-1 grid grid-cols-1 xl:grid-cols-[1fr_360px]">
           <section className="p-6 overflow-y-auto">
             <DraftBanner />
+            <IntakeLinkPanel c={c} update={update} />
             {step === 1 && <Step1 c={c} update={update} />}
             {step === 2 && <Step2 c={c} update={update} />}
             {step === 3 && <Step3 c={c} update={update} />}
@@ -271,6 +272,9 @@ export function Workspace() {
                 missing={missing}
                 risks={risks}
                 attachments={attachments}
+                onCopy={handleCopy}
+                onPrint={handlePrint}
+                onExport={exportFile}
               />
             )}
             <div className="mt-8 flex justify-between">
