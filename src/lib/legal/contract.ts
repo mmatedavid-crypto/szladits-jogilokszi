@@ -22,6 +22,10 @@ function formatDraftDate(value?: string): string {
   return date.toLocaleDateString("hu-HU", { timeZone: "Europe/Budapest" });
 }
 
+function stripTrailingPunct(s: string): string {
+  return (s || "").replace(/[\s.,;:!?…—–-]+$/u, "").trim();
+}
+
 const REVIEW = (msg: string) => `[HIÁNYZÓ ADAT / ÜGYVÉDI DÖNTÉS SZÜKSÉGES: ${msg}]`;
 // A részletes jogi indoklást a clauseReviewReport tartalmazza; a szerződés szövegében csak rövid marker jelenik meg.
 const LEGAL_REVIEW = (_msg: string) => `[ÜGYVÉDI ELLENŐRZÉS SZÜKSÉGES — részletek a klauzula review reportban]`;
