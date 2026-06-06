@@ -22,6 +22,10 @@ function formatDraftDate(value?: string): string {
   return date.toLocaleDateString("hu-HU", { timeZone: "Europe/Budapest" });
 }
 
+function stripTrailingPunct(s: string): string {
+  return (s || "").replace(/[\s.,;:!?…—–-]+$/u, "").trim();
+}
+
 const REVIEW = (msg: string) => `[HIÁNYZÓ ADAT / ÜGYVÉDI DÖNTÉS SZÜKSÉGES: ${msg}]`;
 // A részletes jogi indoklást a clauseReviewReport tartalmazza; a szerződés szövegében csak rövid marker jelenik meg.
 const LEGAL_REVIEW = (_msg: string) => `[ÜGYVÉDI ELLENŐRZÉS SZÜKSÉGES — részletek a klauzula review reportban]`;
@@ -191,9 +195,13 @@ export function generateContractDraft(c: CaseFile): string {
     `  – természetbeni cím: ${c.property.iranyitoszam || "[ir.sz.]"} ${c.property.telepules || "[település]"}, ${c.property.cim || "[utca, hsz.]"};`,
   );
   out.push(`  – helyrajzi szám: ${c.property.helyrajziSzam || "[hrsz.]"};`);
-  out.push(
-    `  – művelési ág / megnevezés: ${c.property.ingatlanTipus || "[típus]"}${c.property.muvelesiAg ? ` / ${c.property.muvelesiAg}` : ""};`,
-  );
+  {
+    const ma = (c.property.muvelesiAg || "").trim();
+    const hasMa = ma.length > 0 && !/^[-—–]+$/.test(ma);
+    out.push(
+      `  – megnevezés: ${c.property.ingatlanTipus || "[típus]"}${hasMa ? `; művelési ág: ${ma}` : ""};`,
+    );
+  }
   out.push(`  – alapterület: ${c.property.alapterulet || "[m²]"} m²;`);
   out.push(`  – eladói tulajdoni hányad: ${c.property.tulajdoniHanyad || "1/1"}.`);
   if (c.property.tarsashaziAlbetet)
@@ -204,9 +212,8 @@ export function generateContractDraft(c: CaseFile): string {
     out.push(
       sub(
         s,
-        "Az adásvétel részeként a Vevőre átszáll a teremgarázs és tároló használatának joga. A teremgarázs/tároló pontos jogi minősítését (külön albetét; eszmei hányad; kizárólagos használati jog) " +
-          REVIEW("teremgarázs/tároló jogi státusza (külön albetét / eszmei hányad / kizárólagos használati jog) — tulajdoni lap alapján rögzítendő") +
-          ".",
+        "Az adásvétel részeként a teremgarázs és/vagy tároló jogi minősítése (külön albetét, eszmei hányad vagy kizárólagos használati jog) és átruházásának módja a tulajdoni lap alapján rögzítendő. " +
+          REVIEW("teremgarázs/tároló jogi státusza"),
       ),
     );
   }
@@ -386,7 +393,7 @@ export function generateContractDraft(c: CaseFile): string {
     ),
   );
   if (c.possession.feltetel)
-    out.push(sub(s, `Birtokbaadás feltétele: ${c.possession.feltetel}.`));
+    out.push(sub(s, `Birtokbaadás feltétele: ${stripTrailingPunct(c.possession.feltetel)}.`));
   if (c.possession.kozmuAtiras)
     out.push(
       sub(
@@ -713,6 +720,11 @@ export function generateContractDraft(c: CaseFile): string {
     "— TERVEZET vége. Ügyvédi felülvizsgálat és ellenjegyzés nélkül nem használható. —",
   );
 
-  // Sanitize any accidental triple-dot or stray patterns
-  return out.join("\n").replace(/\.{4,}/g, "…").replace(/ {2,}\n/g, "\n");
+  // Sanitize: collapse double punctuation, stray ellipses, double spaces.
+  return out
+    .join("\n")
+    .replace(/\.{4,}/g, "…")
+    .replace(/([.!?,;:])\1+/g, "$1")
+    .replace(/\s+([.,;:!?])/g, "$1")
+    .replace(/ {2,}\n/g, "\n");
 }
