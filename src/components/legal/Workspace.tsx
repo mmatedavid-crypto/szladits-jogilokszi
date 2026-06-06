@@ -76,7 +76,13 @@ export function Workspace() {
     );
 
   useEffect(() => {
-    setC(loadCase());
+    let loaded = loadCase();
+    // Ha még nincs egyetlen mentett ügy sem, hozzunk létre egy újat,
+    // hogy a CaseSwitcher tudjon közte és új ügyek között váltani.
+    if (listCases().length === 0) {
+      loaded = createCase("Új ügy");
+    }
+    setC(loaded);
     setHydrated(true);
   }, []);
 
@@ -98,11 +104,26 @@ export function Workspace() {
     });
   };
 
-  const handleLoadDemo = () => setC(demoCase());
-  const handleClear = () => {
-    clearCase();
-    setC(emptyCase());
+  const handleLoadDemo = () => {
+    // A demo adatok az aktuális ügybe töltődnek (megőrizve az id-t),
+    // hogy ne hozzon létre minden klikk új duplikátumot.
+    const demo = demoCase();
+    demo.id = c.id;
+    demo.cimke = "Demo — Kovács / Szabó";
+    setC(demo);
   };
+  const handleClear = () => {
+    // Csak az aktív ügyet törli.
+    clearCase();
+    // Töltsünk be valamit, hogy ne maradjon árva állapot.
+    const remaining = listCases();
+    if (remaining.length > 0) {
+      setC(loadCase());
+    } else {
+      setC(createCase("Új ügy"));
+    }
+  };
+
   const handleCopy = () => {
     const text =
       outputTab === "szerzodes"
