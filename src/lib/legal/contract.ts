@@ -41,7 +41,7 @@ export function generateContractDraft(c: CaseFile): string {
 
   const sections: string[] = [];
 
-  // Földforgalmi „zöld papír" (biztonsági okmány) változat fejléce
+  // Földforgalmi „zöld papír” (biztonsági okmány) változat fejléce
   const ff = c.special.foldforgalmi;
   const agri =
     c.transactionTypes.includes("termofold") ||
@@ -55,7 +55,7 @@ export function generateContractDraft(c: CaseFile): string {
   if (biztOkm) {
     sections.push("[BIZTONSÁGI OKMÁNYRA TÖRTÉNŐ NYOMTATÁSHOZ ELŐKÉSZÍTETT VÁLTOZAT]");
     sections.push(
-      "  A 2013. évi CXXII. tv. (Földforgalmi tv.) és a kapcsolódó jogszabályok szerint mező- és erdőgazdasági föld adásvételi szerződését biztonsági okmányon („zöld papír") kell kiállítani. A jelen tervezetet az ügyvéd a biztonsági okmány lapjaira nyomtatja, a sorszámot az ügyiratban dokumentálja.",
+      "  A 2013. évi CXXII. tv. (Földforgalmi tv.) és a kapcsolódó jogszabályok szerint mező- és erdőgazdasági föld adásvételi szerződését biztonsági okmányon („zöld papír”) kell kiállítani. A jelen tervezetet az ügyvéd a biztonsági okmány lapjaira nyomtatja, a sorszámot az ügyiratban dokumentálja.",
     );
     sections.push(
       `  Biztonsági okmány sorszáma: ${ff.biztonsagiOkmanySorszam || "____________________"}`,
@@ -67,7 +67,7 @@ export function generateContractDraft(c: CaseFile): string {
   } else if (agri) {
     sections.push("[SIMA NYOMTATOTT VÁLTOZAT — földforgalmi ügylet]");
     sections.push(
-      "  Figyelem: a mező- és erdőgazdasági föld adásvételi szerződését a Földforgalmi tv. szerint biztonsági okmányon („zöld papír") kell véglegesíteni. A jelen sima nyomtatott példány belső munkapéldányként, egyeztetésre szolgál.",
+      "  Figyelem: a mező- és erdőgazdasági föld adásvételi szerződését a Földforgalmi tv. szerint biztonsági okmányon („zöld papír”) kell véglegesíteni. A jelen sima nyomtatott példány belső munkapéldányként, egyeztetésre szolgál.",
     );
     sections.push("");
   }
