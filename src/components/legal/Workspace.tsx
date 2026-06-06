@@ -149,12 +149,16 @@ export function Workspace() {
     setOutputTab("szerzodes");
     setTimeout(() => window.print(), 50);
   };
-  const exportFile = async (kind: "txt" | "html" | "docx") => {
-    const filename = `${c.ugyAzonosito || "tervezet"}-szerzodes.${kind}`;
+  const exportFile = async (
+    kind: "txt" | "html" | "docx",
+    variant: "sima" | "biztonsagi_okmany" = "sima",
+  ) => {
+    const suffix = variant === "biztonsagi_okmany" ? "-zoldpapir" : "";
+    const filename = `${c.ugyAzonosito || "tervezet"}-szerzodes${suffix}.${kind}`;
     let blob: Blob;
     if (kind === "docx") {
       const { generateContractDocx } = await import("@/lib/legal/docx");
-      blob = await generateContractDocx(contract, c.ugyAzonosito);
+      blob = await generateContractDocx(contract, c.ugyAzonosito, variant, c);
     } else {
       const content =
         kind === "txt"
@@ -296,6 +300,7 @@ export function Workspace() {
             )}
             {step === 7 && (
               <Step7
+                c={c}
                 tab={outputTab}
                 setTab={setOutputTab}
                 contract={contract}
@@ -1014,6 +1019,42 @@ function Step6({
             <Check checked={f.tulajdonszerzesiKorlat} onChange={(v) => patchF("tulajdonszerzesiKorlat", v)} label="Tulajdonszerzési korlát érintett" />
             <Check checked={f.nyilatkozatok} onChange={(v) => patchF("nyilatkozatok", v)} label="Nyilatkozatok szükségesek" />
           </div>
+
+          <div className="mt-5 pt-4 border-t border-accent/30">
+            <h4 className="text-xs font-semibold text-accent mb-2">
+              Nyomtatási változat (Földforgalmi tv. szerinti okiratkiállítás)
+            </h4>
+            <p className="text-xs text-muted-foreground mb-2">
+              Földforgalmi szerződést a 47/2014. (II. 26.) Korm. rendelet szerinti biztonsági
+              okmányon („zöld papír") kell véglegesíteni. A sima nyomtatott változat belső
+              munkapéldányként, egyeztetésre szolgál.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <Field label="Nyomtatási változat">
+                <Select
+                  value={f.nyomtatasiValtozat}
+                  onChange={(e) => patchF("nyomtatasiValtozat", e.target.value)}
+                >
+                  <option value="sima">Sima nyomtatott (munkapéldány)</option>
+                  <option value="biztonsagi_okmany">Biztonsági okmány („zöld papír")</option>
+                </Select>
+              </Field>
+              <Field label="Biztonsági okmány sorszáma">
+                <TextInput
+                  value={f.biztonsagiOkmanySorszam}
+                  onChange={(e) => patchF("biztonsagiOkmanySorszam", e.target.value)}
+                  placeholder="pl. AB 1234567"
+                />
+              </Field>
+              <Field label="Kiállító / forgalmazó">
+                <TextInput
+                  value={f.biztonsagiOkmanyKiallito}
+                  onChange={(e) => patchF("biztonsagiOkmanyKiallito", e.target.value)}
+                  placeholder="pl. Pénzjegynyomda"
+                />
+              </Field>
+            </div>
+          </div>
         </div>
       ) : (
         <p className="text-xs text-muted-foreground mb-6">
@@ -1073,6 +1114,7 @@ function Step6({
 // ---------- Step 7 ----------
 
 function Step7({
+  c,
   tab,
   setTab,
   contract,
@@ -1084,6 +1126,7 @@ function Step7({
   onPrint,
   onExport,
 }: {
+  c: CaseFile;
   tab: "szerzodes" | "hianyzo" | "kockazat" | "mellekletek" | "osszefoglalo";
   setTab: (t: "szerzodes" | "hianyzo" | "kockazat" | "mellekletek" | "osszefoglalo") => void;
   contract: string;
@@ -1093,7 +1136,10 @@ function Step7({
   attachments: ReturnType<typeof generateAttachmentList>;
   onCopy: () => void;
   onPrint: () => void;
-  onExport: (kind: "txt" | "html" | "docx") => Promise<void>;
+  onExport: (
+    kind: "txt" | "html" | "docx",
+    variant?: "sima" | "biztonsagi_okmany",
+  ) => Promise<void>;
 }) {
   const tabs: { id: typeof tab; label: string }[] = [
     { id: "szerzodes", label: "Szerződéstervezet" },
@@ -1102,6 +1148,12 @@ function Step7({
     { id: "mellekletek", label: `Mellékletlista (${attachments.length})` },
     { id: "osszefoglalo", label: "Ügyleti összefoglaló" },
   ];
+
+  const agri =
+    c.transactionTypes.includes("termofold") ||
+    c.transactionTypes.includes("tanya") ||
+    (c.transactionTypes.includes("zartkert") &&
+      c.special.zartkertStatus === "mezogazdasagi");
 
   const groups: Record<string, typeof missing> = {};
   missing.forEach((m) => {
@@ -1116,9 +1168,19 @@ function Step7({
         <span className="text-xs text-muted-foreground mr-2">
           A teljes dokumentumcsomag exportja (tervezet — ügyvédi ellenjegyzésre vár):
         </span>
-        <Button size="sm" variant="default" onClick={() => void onExport("docx")}>
-          📝 Word (.docx)
+        <Button size="sm" variant="default" onClick={() => void onExport("docx", "sima")}>
+          📝 Word — sima nyomtatott
         </Button>
+        {agri && (
+          <Button
+            size="sm"
+            variant="default"
+            onClick={() => void onExport("docx", "biztonsagi_okmany")}
+            title='Földforgalmi tv. szerinti biztonsági okmány („zöld papír") változat'
+          >
+            🟢 Word — biztonsági okmány („zöld papír")
+          </Button>
+        )}
         <Button size="sm" variant="secondary" onClick={() => void onExport("html")}>
           .html
         </Button>

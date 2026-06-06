@@ -157,6 +157,8 @@ export interface Possession {
   kotberOsszeg: string;
 }
 
+export type FoldforgalmiNyomtatas = "sima" | "biztonsagi_okmany";
+
 export interface FoldforgalmiModul {
   fold: boolean;
   muvelesiAg: string;
@@ -171,6 +173,10 @@ export interface FoldforgalmiModul {
   hatosagiJovahagyas: boolean;
   tulajdonszerzesiKorlat: boolean;
   nyilatkozatok: boolean;
+  // Nyomtatási változat: sima nyomtatott példány vs. biztonsági okmány („zöld papír")
+  nyomtatasiValtozat: FoldforgalmiNyomtatas;
+  biztonsagiOkmanySorszam: string;
+  biztonsagiOkmanyKiallito: string;
 }
 
 export interface SpecialRules {
