@@ -150,13 +150,19 @@ export function Workspace() {
     setTimeout(() => window.print(), 50);
   };
   const exportFile = async (
-    kind: "txt" | "html" | "docx",
+    kind: "txt" | "html" | "docx" | "review-md",
     variant: "sima" | "biztonsagi_okmany" = "sima",
   ) => {
     const suffix = variant === "biztonsagi_okmany" ? "-zoldpapir" : "";
-    const filename = `${c.ugyAzonosito || "tervezet"}-szerzodes${suffix}.${kind}`;
+    let filename = `${c.ugyAzonosito || "tervezet"}-szerzodes${suffix}.${kind}`;
     let blob: Blob;
-    if (kind === "docx") {
+    if (kind === "review-md") {
+      const { generateClauseReviewReport } = await import("@/lib/legal/clauseReviewReport");
+      const report = generateClauseReviewReport(c);
+      const prefix = report.title.includes("HIANYOS-TERVEZET") ? "HIANYOS-TERVEZET-" : "";
+      filename = `${prefix}${c.ugyAzonosito || "tervezet"}-klauzula-review-report.md`;
+      blob = new Blob([report.markdown], { type: "text/markdown;charset=utf-8" });
+    } else if (kind === "docx") {
       const { generateContractDocx } = await import("@/lib/legal/docx");
       blob = await generateContractDocx(contract, c.ugyAzonosito, variant, c);
     } else {
@@ -1137,7 +1143,7 @@ function Step7({
   onCopy: () => void;
   onPrint: () => void;
   onExport: (
-    kind: "txt" | "html" | "docx",
+    kind: "txt" | "html" | "docx" | "review-md",
     variant?: "sima" | "biztonsagi_okmany",
   ) => Promise<void>;
 }) {
@@ -1186,6 +1192,9 @@ function Step7({
         </Button>
         <Button size="sm" variant="secondary" onClick={() => void onExport("txt")}>
           .txt
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => void onExport("review-md")}>
+          Klauzula review report megnyitása
         </Button>
         <Button size="sm" variant="secondary" onClick={onPrint}>
           Nyomtatás / PDF

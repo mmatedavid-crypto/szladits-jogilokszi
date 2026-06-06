@@ -5,6 +5,7 @@ import {
   getAllLawRefs,
   type LawRef,
 } from "../src/lib/legal/clauseMatrix";
+import { generateClauseReviewReport } from "../src/lib/legal/clauseReviewReport";
 import { generateRiskFlags } from "../src/lib/legal/logic";
 import { demoCase, emptyCase, newId } from "../src/lib/legal/state";
 import type { CaseFile, NaturalPerson } from "../src/lib/legal/types";
@@ -290,6 +291,7 @@ let failed = 0;
 
 for (const scenario of scenarios) {
   const contract = generateContractDraft(scenario.caseFile);
+  const report = generateClauseReviewReport(scenario.caseFile);
   const risks = generateRiskFlags(scenario.caseFile);
   const pairings = getActiveClausePairings(scenario.caseFile);
   const ctx: AuditContext = { contract, risks };
@@ -308,13 +310,39 @@ for (const scenario of scenarios) {
       })),
     ),
   );
-  const failures = [...scenarioFailures, ...pairingFailures, ...lawRefFailures];
+  const reportFailures = [
+    !report.markdown.includes("# ") && { label: `${scenario.id}: review report title missing` },
+    !report.markdown.includes("## Aktív klauzulák") && {
+      label: `${scenario.id}: review report active clauses section missing`,
+    },
+    !report.markdown.includes("lawRef: {") && {
+      label: `${scenario.id}: review report lawRef block missing`,
+    },
+    !report.markdown.includes("AI előpárosítás") && {
+      label: `${scenario.id}: review report lawyer review wording missing`,
+    },
+    scenario.id === "incomplete" &&
+      !report.title.includes("HIANYOS-TERVEZET") && {
+        label: `${scenario.id}: critical missing data did not create HIANYOS-TERVEZET title`,
+      },
+    ...report.missingLawRefMetadata.map((metadataIssue) => ({
+      label: `${scenario.id}: report missing lawRef metadata -> ${metadataIssue}`,
+    })),
+    ...pairings
+      .filter((pairing) => pairing.reviewStatus === "lawyer_approved")
+      .map((pairing) => ({
+        label: `${scenario.id}: clause auto-marked lawyer-approved -> ${pairing.id}`,
+      })),
+  ].filter(Boolean) as Array<{ label: string }>;
+  const failures = [...scenarioFailures, ...pairingFailures, ...lawRefFailures, ...reportFailures];
   const placeholderCount = (contract.match(/\[[^\]]+\]|_{6,}/g) ?? []).length;
 
   console.log(`\n=== ${scenario.label} (${scenario.id}) ===`);
   console.log(`Tervezet hossz: ${contract.length.toLocaleString("hu-HU")} karakter`);
   console.log(`Kockázati pontok: ${risks.length}`);
   console.log(`Aktív jogi párosítások: ${pairings.length}`);
+  console.log(`Review report cím: ${report.title}`);
+  console.log(`Review report hossz: ${report.markdown.length.toLocaleString("hu-HU")} karakter`);
   console.log(`Placeholder / üres aláírási mező jelölések: ${placeholderCount}`);
   for (const pairing of pairings) {
     const statutes = getAllLawRefs(pairing)
@@ -349,6 +377,6 @@ if (failed > 0) {
 }
 
 console.log("\nTechnical legal-matrix audit OK.");
-console.log("All expected clause mappings were triggered.");
+console.log("Clause review report generated successfully.");
 console.log("All active legal references include complete lawRef metadata.");
-console.log("All legal references remain marked as lawyer-review-required.");
+console.log("All AI-prelinked references remain pending lawyer review.");

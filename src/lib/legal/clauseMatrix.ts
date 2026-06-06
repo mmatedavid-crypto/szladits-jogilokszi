@@ -14,7 +14,12 @@ export interface LawRef {
   verificationStatus: LawRefVerificationStatus;
 }
 
-export type ClauseReviewStatus = LawRefVerificationStatus;
+export type ClauseReviewStatus =
+  | "ai_prelinked"
+  | "lawyer_approved"
+  | "lawyer_needs_modification"
+  | "lawyer_rejected"
+  | "blocked_missing_data";
 export type ClauseRiskLevel = "alap" | "kozepes" | "magas" | "kritikus";
 
 export interface ClausePairing {
@@ -104,7 +109,7 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     leiras:
       "A dokumentum nem végleges szerződésként, hanem ügyvédi ellenőrzésre és ellenjegyzésre váró tervezetként jelenik meg.",
     triggerLeiras: "Minden generált okiratnál kötelező.",
-    reviewStatus: AI_PRELINKED_PENDING_REVIEW,
+    reviewStatus: "ai_prelinked",
     riskLevel: "kritikus",
     lawRef: lawRef(
       "2017. évi LXXVIII. törvény",
@@ -135,7 +140,7 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     leiras:
       "A felek személyes vagy céges azonosító adatai, Pmt. átvilágítása és tényleges tulajdonosi nyilatkozatai.",
     triggerLeiras: "Minden ügyben aktív; céges félnél fokozottan ellenőrzendő.",
-    reviewStatus: AI_PRELINKED_PENDING_REVIEW,
+    reviewStatus: "ai_prelinked",
     riskLevel: "magas",
     lawRef: lawRef(
       "2017. évi LIII. törvény",
@@ -166,7 +171,7 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     leiras:
       "Az ingatlan természetbeni címe, helyrajzi száma, tulajdoni hányada, művelési ága és társasházi státusza.",
     triggerLeiras: "Minden ingatlan-adásvételi ügyben aktív.",
-    reviewStatus: AI_PRELINKED_PENDING_REVIEW,
+    reviewStatus: "ai_prelinked",
     riskLevel: "kritikus",
     lawRef: lawRef(
       "1997. évi CXLI. törvény",
@@ -188,7 +193,7 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     leiras:
       "Jelzálog, végrehajtás, haszonélvezet, elidegenítési tilalom, elővásárlási jog vagy egyéb teher kezelése.",
     triggerLeiras: "Akkor aktív, ha bármely teher mező jelölt vagy szövegesen kitöltött.",
-    reviewStatus: AI_PRELINKED_PENDING_REVIEW,
+    reviewStatus: "ai_prelinked",
     riskLevel: "kritikus",
     lawRef: lawRef(
       "1997. évi CXLI. törvény",
@@ -229,7 +234,7 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     cim: "Foglaló",
     leiras: "Foglaló összege, beszámítása és meghiúsulási jogkövetkezményei.",
     triggerLeiras: "payment.foglaloVan === true",
-    reviewStatus: AI_PRELINKED_PENDING_REVIEW,
+    reviewStatus: "ai_prelinked",
     riskLevel: "magas",
     lawRef: lawRef("2013. évi V. törvény", "Ptk.", "6:185. §", "Foglaló", NJT.ptk),
     activeWhen: (c) => c.payment.foglaloVan,
@@ -245,7 +250,7 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     leiras:
       "Banki finanszírozás, bejegyzési engedély ügyvédi letétbe helyezése és függőben tartási konstrukció.",
     triggerLeiras: "payment.bankhitelVan === true vagy hitellel érintett ügytípus.",
-    reviewStatus: AI_PRELINKED_PENDING_REVIEW,
+    reviewStatus: "ai_prelinked",
     riskLevel: "kritikus",
     lawRef: lawRef("1997. évi CXLI. törvény", "Inytv.", "47/A. §", "Függőben tartás", NJT.inytv),
     relatedLawRefs: [
@@ -264,7 +269,7 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     leiras:
       "Birtokbaadás időpontja, közműóra átírás, kulcsátadás, kárveszély átszállása és késedelmi következmények.",
     triggerLeiras: "Minden ügyben aktív; kötbérnél külön Ptk. ellenőrzés.",
-    reviewStatus: AI_PRELINKED_PENDING_REVIEW,
+    reviewStatus: "ai_prelinked",
     riskLevel: "kozepes",
     lawRef: lawRef("2013. évi V. törvény", "Ptk.", "6:219. §", "Kárveszély átszállása", NJT.ptk),
     relatedLawRefs: [lawRef("2013. évi V. törvény", "Ptk.", "6:186-6:189. §", "Kötbér", NJT.ptk)],
@@ -280,7 +285,7 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     cim: "Illeték és B400",
     leiras: "Visszterhes vagyonátruházási illeték, B400 adatlap és NAV felé továbbítási folyamat.",
     triggerLeiras: "Minden visszterhes ingatlan-adásvételnél aktív.",
-    reviewStatus: AI_PRELINKED_PENDING_REVIEW,
+    reviewStatus: "ai_prelinked",
     riskLevel: "kozepes",
     lawRef: lawRef(
       "1990. évi XCIII. törvény",
@@ -302,7 +307,7 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     leiras: "Törvényes képviselet, gyámhatósági jóváhagyás és felfüggesztett hatály kezelése.",
     triggerLeiras:
       "Ha bármely természetes személy fél 18 év alatti vagy cselekvőképességi státusza korlátozott.",
-    reviewStatus: AI_PRELINKED_PENDING_REVIEW,
+    reviewStatus: "ai_prelinked",
     riskLevel: "kritikus",
     lawRef: lawRef(
       "2013. évi V. törvény",
@@ -324,7 +329,7 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     leiras:
       "Termőföld, tanya vagy mezőgazdasági zártkert esetén elővásárlás, kifüggesztés, hatósági jóváhagyás és biztonsági okmány.",
     triggerLeiras: "termofold, tanya vagy mezőgazdasági zártkert ügytípus.",
-    reviewStatus: AI_PRELINKED_PENDING_REVIEW,
+    reviewStatus: "ai_prelinked",
     riskLevel: "kritikus",
     lawRef: lawRef(
       "2013. évi CXXII. törvény",
@@ -355,7 +360,7 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     leiras:
       "Földforgalmi okirat biztonsági elemekkel ellátott papír alapú okmányra előkészített változata.",
     triggerLeiras: "Földforgalmi ügy és nyomtatási változat: biztonsági_okmany.",
-    reviewStatus: AI_PRELINKED_PENDING_REVIEW,
+    reviewStatus: "ai_prelinked",
     riskLevel: "kritikus",
     lawRef: lawRef(
       "47/2014. (II. 26.) Korm. rendelet",
@@ -378,7 +383,7 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     leiras:
       "Nem magyar vevő vagy külföldi székhelyű szerző fél esetén engedélyezési és kivételi szabályok előzetes jelzése.",
     triggerLeiras: "Nem magyar állampolgárságú vevő vagy külföldi székhelyű céges vevő.",
-    reviewStatus: AI_PRELINKED_PENDING_REVIEW,
+    reviewStatus: "ai_prelinked",
     riskLevel: "magas",
     lawRef: lawRef(
       "251/2014. (X. 2.) Korm. rendelet",
@@ -400,7 +405,7 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     leiras:
       "Cégkivonat, képviseleti jogosultság, aláírásminta és tényleges tulajdonosi nyilatkozat.",
     triggerLeiras: "Ha bármely fél céges fél.",
-    reviewStatus: AI_PRELINKED_PENDING_REVIEW,
+    reviewStatus: "ai_prelinked",
     riskLevel: "magas",
     lawRef: lawRef(
       "2017. évi LIII. törvény",
@@ -430,7 +435,7 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     cim: "Energetikai tanúsítvány",
     leiras: "Energetikai tanúsítvány átadása, HET szám és ügyvédi ellenőrzési megjegyzés.",
     triggerLeiras: "Lakóingatlan jellegű ügyleteknél aktív; hiánynál placeholder/figyelmeztetés.",
-    reviewStatus: AI_PRELINKED_PENDING_REVIEW,
+    reviewStatus: "ai_prelinked",
     riskLevel: "kozepes",
     lawRef: lawRef(
       "176/2008. (VI. 30.) Korm. rendelet",
@@ -452,7 +457,7 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     leiras:
       "Alapító okirat, SZMSZ, közös képviselői igazolás és társasházi elővásárlási/hozzájárulási kérdések.",
     triggerLeiras: "Társasházi albetét vagy property.tarsashaziAlbetet.",
-    reviewStatus: AI_PRELINKED_PENDING_REVIEW,
+    reviewStatus: "ai_prelinked",
     riskLevel: "kozepes",
     lawRef: lawRef(
       "2003. évi CXXXIII. törvény",
@@ -481,7 +486,15 @@ export function getAllLawRefs(pairing: ClausePairing): LawRef[] {
 
 export function formatReviewStatus(status: ClauseReviewStatus): string {
   switch (status) {
-    case "ai_prelinked_pending_lawyer_review":
-      return "Előpárosított hivatkozás - ügyvédi ellenőrzés szükséges";
+    case "ai_prelinked":
+      return "AI előpárosítás – ügyvédi ellenőrzés szükséges";
+    case "lawyer_approved":
+      return "Ügyvéd által jóváhagyva";
+    case "lawyer_needs_modification":
+      return "Ügyvédi módosítást igényel";
+    case "lawyer_rejected":
+      return "Ügyvéd által elutasítva";
+    case "blocked_missing_data":
+      return "Hiányzó adat miatt blokkolt";
   }
 }

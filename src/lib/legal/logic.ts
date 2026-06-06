@@ -523,7 +523,7 @@ export function generateCaseSummary(c: CaseFile): string {
     "Következő ügyvédi teendők:",
     ...teendok.map((t) => `  • ${t}`),
     "",
-    "Megjegyzés: szabálylogikával támogatott okiratszerkesztési demo. Jogi review szükséges.",
+    "Megjegyzés: szabálylogikával támogatott belső okiratszerkesztési eszköz. Ügyvédi ellenőrzés szükséges.",
   ].join("\n");
 }
 
