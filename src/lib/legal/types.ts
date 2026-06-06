@@ -126,9 +126,18 @@ export interface Property {
   tehermentesitesiTerv: string;
 }
 
+export type AfaKezeles =
+  | ""
+  | "afa_korin_kivuli"
+  | "afa_mentes"
+  | "tartalmazza_27"
+  | "tartalmazza_5"
+  | "forditott";
+
 export interface PaymentPlan {
   teljesVetelar: string;
   penznem: "HUF" | "EUR" | "USD";
+  afaKezeles: AfaKezeles;
   foglaloVan: boolean;
   foglaloOsszeg: string;
   elolegVan: boolean;

@@ -21,15 +21,10 @@ function footer(doc: jsPDF) {
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-    doc.setFontSize(7);
-    doc.setTextColor(120);
-    doc.text(
-      "Szladits Maganjogi Asszisztens - belso teszt - generalt: " +
-        new Date().toLocaleString("hu-HU") +
-        "  |  Ugyvedi ellenorzes szukseges",
-      20,
-      287,
-    );
+    doc.setFontSize(8);
+    doc.setTextColor(110);
+    // Professzionális oldalszám — projekt/preview hivatkozás, időbélyeg és külső URL nélkül.
+    doc.text(`${i} / ${pageCount}. oldal`, 105, 287, { align: "center" });
     doc.setTextColor(0);
   }
 }

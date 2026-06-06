@@ -15,8 +15,23 @@ export const JOGSZABALYOK = {
     url: "https://njt.hu/jogszabaly/2013-5-00-00",
   },
   inytv: {
-    rovid: "Inytv.",
-    teljes: "1997. évi CXLI. törvény az ingatlan-nyilvántartásról",
+    rovid: "Inytv. (új)",
+    teljes: "2021. évi C. törvény az ingatlan-nyilvántartásról (hatályos: 2026.03.01-től; az 1997. évi CXLI. törvényt felváltó új Inytv.)",
+    url: "https://njt.hu/jogszabaly/2021-100-00-00",
+  },
+  inytvVhr: {
+    rovid: "Inytv. vhr.",
+    teljes: "179/2023. (V. 15.) Korm. rendelet az ingatlan-nyilvántartásról szóló 2021. évi C. törvény végrehajtásáról",
+    url: "https://njt.hu/jogszabaly/2023-179-20-22",
+  },
+  inytvAtmeneti: {
+    rovid: "Inytv. átm. tv.",
+    teljes: "2021. évi CXLVI. törvény az új Inytv. hatálybalépésével összefüggő átmeneti rendelkezésekről",
+    url: "https://njt.hu/jogszabaly/2021-146-00-00",
+  },
+  inytvRegi: {
+    rovid: "Inytv. (régi, 2026.03.01-ig hatályos)",
+    teljes: "1997. évi CXLI. törvény az ingatlan-nyilvántartásról (2026.03.01-én hatályát vesztette)",
     url: "https://njt.hu/jogszabaly/1997-141-00-00",
   },
   itv: {

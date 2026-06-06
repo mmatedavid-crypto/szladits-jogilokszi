@@ -145,9 +145,26 @@ export function Workspace() {
     void navigator.clipboard.writeText(text);
   };
   const handlePrint = () => {
-    setStep(7);
-    setOutputTab("szerzodes");
-    setTimeout(() => window.print(), 50);
+    // Külön, "tiszta" nyomtatási ablak: a böngésző URL fejléc/lábléc helyett az
+    // okirat címét és oldalszámát mutatja, projekt-URL nélkül. A felhasználónak
+    // a nyomtatási dialógusban érdemes a "Headers and footers" opciót kikapcsolni.
+    const title = `${c.ugyAzonosito || "Ingatlan-adasveteli-szerzodes"} — szerződéstervezet`;
+    const safe = contract.replace(/[<>&]/g, (s) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" })[s] as string);
+    const html = `<!doctype html><html lang="hu"><head><meta charset="utf-8"><title>${title}</title>
+<style>
+  @page { size: A4; margin: 22mm 20mm 22mm 20mm; }
+  html, body { background: #fff; color: #111; }
+  body { font-family: "Times New Roman", Georgia, serif; font-size: 12pt; line-height: 1.45; margin: 0; padding: 0; }
+  pre { white-space: pre-wrap; word-wrap: break-word; font-family: inherit; font-size: inherit; margin: 0; }
+  @media print { .noprint { display: none; } }
+</style></head><body><pre>${safe}</pre>
+<script>window.addEventListener('load', function(){ setTimeout(function(){ window.focus(); window.print(); }, 100); });<\/script>
+</body></html>`;
+    const w = window.open("", "_blank", "width=900,height=1100");
+    if (!w) return;
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
   };
   const exportFile = async (
     kind: "txt" | "html" | "docx" | "review-md",
@@ -884,6 +901,16 @@ function Step4({
             <option value="HUF">HUF</option>
             <option value="EUR">EUR</option>
             <option value="USD">USD</option>
+          </Select>
+        </Field>
+        <Field label="ÁFA-kezelés (kötelező)">
+          <Select value={p.afaKezeles} onChange={(e) => patch("afaKezeles", e.target.value)}>
+            <option value="">— ügyvédi döntés szükséges —</option>
+            <option value="afa_korin_kivuli">ÁFA-körön kívüli ügylet</option>
+            <option value="afa_mentes">ÁFA-mentes (Áfa tv. 86. §)</option>
+            <option value="tartalmazza_27">Vételár tartalmazza a 27% ÁFÁ-t</option>
+            <option value="tartalmazza_5">Vételár tartalmazza az 5% ÁFÁ-t (új építésű)</option>
+            <option value="forditott">Fordított adózás (Áfa tv. 142. §)</option>
           </Select>
         </Field>
         <Field label="Önerő összege"><TextInput value={p.onero} onChange={(e) => patch("onero", e.target.value)} /></Field>
