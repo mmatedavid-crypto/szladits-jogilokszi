@@ -1049,6 +1049,9 @@ function Step7({
   missing,
   risks,
   attachments,
+  onCopy,
+  onPrint,
+  onExport,
 }: {
   tab: "szerzodes" | "hianyzo" | "kockazat" | "mellekletek" | "osszefoglalo";
   setTab: (t: "szerzodes" | "hianyzo" | "kockazat" | "mellekletek" | "osszefoglalo") => void;
@@ -1057,11 +1060,14 @@ function Step7({
   missing: ReturnType<typeof detectMissingFields>;
   risks: ReturnType<typeof generateRiskFlags>;
   attachments: ReturnType<typeof generateAttachmentList>;
+  onCopy: () => void;
+  onPrint: () => void;
+  onExport: (kind: "txt" | "html" | "docx") => Promise<void>;
 }) {
   const tabs: { id: typeof tab; label: string }[] = [
     { id: "szerzodes", label: "Szerződéstervezet" },
     { id: "hianyzo", label: `Hiányzó adatok (${missing.length})` },
-    { id: "kockazat", label: `Kockázati lista (${risks.length})` },
+    { id: "kockazat", label: `Kockázati pontok (${risks.length})` },
     { id: "mellekletek", label: `Mellékletlista (${attachments.length})` },
     { id: "osszefoglalo", label: "Ügyleti összefoglaló" },
   ];
@@ -1074,7 +1080,27 @@ function Step7({
 
   return (
     <div>
-      <SectionTitle>Kimenetek</SectionTitle>
+      <SectionTitle>Dokumentumcsomag</SectionTitle>
+      <div className="mb-4 rounded-md border border-border bg-card p-3 flex flex-wrap gap-2 items-center">
+        <span className="text-xs text-muted-foreground mr-2">
+          A teljes dokumentumcsomag exportja (tervezet — ügyvédi ellenjegyzésre vár):
+        </span>
+        <Button size="sm" variant="default" onClick={() => void onExport("docx")}>
+          📝 Word (.docx)
+        </Button>
+        <Button size="sm" variant="secondary" onClick={() => void onExport("html")}>
+          .html
+        </Button>
+        <Button size="sm" variant="secondary" onClick={() => void onExport("txt")}>
+          .txt
+        </Button>
+        <Button size="sm" variant="secondary" onClick={onPrint}>
+          Nyomtatás / PDF
+        </Button>
+        <Button size="sm" variant="outline" onClick={onCopy}>
+          Másolás vágólapra
+        </Button>
+      </div>
       <div className="flex flex-wrap gap-1 mb-4 border-b border-border">
         {tabs.map((t) => (
           <button
