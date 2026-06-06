@@ -97,6 +97,7 @@ export function loadCase(): CaseFile {
     return {
       ...base,
       ...parsed,
+      eljaroUgyved: { ...base.eljaroUgyved, ...(parsed.eljaroUgyved ?? {}) },
       modulok: { ...base.modulok, ...(parsed.modulok ?? {}) },
     } as CaseFile;
   } catch {
