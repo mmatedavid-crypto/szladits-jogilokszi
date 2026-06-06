@@ -7,7 +7,7 @@ export function emptyCase(): CaseFile {
   return {
     ugyAzonosito: "",
     letrehozva: "",
-    eljaroUgyved: { nev: "", kaszSzam: "", iroda: "", irodaCim: "" },
+    eljaroUgyved: { nev: "", kaszSzam: "", iroda: "", irodaCim: "", email: "", telefon: "", website: "", rovidHeader: "", logoDataUrl: "", pecsetDataUrl: "" },
     transactionTypes: [],
     parties: [],
     property: {
