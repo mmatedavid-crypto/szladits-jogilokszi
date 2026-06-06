@@ -528,5 +528,5 @@ export function generateCaseSummary(c: CaseFile): string {
 }
 
 // re-export helpers
-export { isMinor, isRestricted };
+export { isRestricted };
 export type { Company };
