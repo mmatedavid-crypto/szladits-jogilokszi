@@ -23,7 +23,9 @@ function formatDraftDate(value?: string): string {
 }
 
 const REVIEW = (msg: string) => `[HIÁNYZÓ ADAT / ÜGYVÉDI DÖNTÉS SZÜKSÉGES: ${msg}]`;
-const LEGAL_REVIEW = (msg: string) => `[ÜGYVÉDI ELLENŐRZÉS SZÜKSÉGES: ${msg}]`;
+const LEGAL_REVIEW = (msg: string) => `[ÜGYVÉDI ELLENŐRZÉS SZÜKSÉGES — részletek a klauzula review reportban]`;
+// Megjegyzés: a részletes jogi indoklást a clauseReviewReport tartalmazza, a szerződés szövegében csak rövid marker jelenik meg.
+void ((_: string) => _); // tartja a paramétert
 
 function describeParty(p: Party): string {
   if (p.kind === "termeszetes") {
