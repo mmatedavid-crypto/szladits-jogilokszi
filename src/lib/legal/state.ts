@@ -389,7 +389,7 @@ export function demoCase(): CaseFile {
     cim: "Váci utca 10. fszt. 2.",
     helyrajziSzam: "24567/0/A/2",
     ingatlanTipus: "lakás (társasházi albetét)",
-    muvelesiAg: "—",
+    muvelesiAg: "",
     alapterulet: "62",
     tarsashaziAlbetet: true,
     teremgarazsTarolo: true,
