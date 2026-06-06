@@ -886,6 +886,16 @@ function Step4({
             <option value="USD">USD</option>
           </Select>
         </Field>
+        <Field label="ÁFA-kezelés (kötelező)">
+          <Select value={p.afaKezeles} onChange={(e) => patch("afaKezeles", e.target.value)}>
+            <option value="">— ügyvédi döntés szükséges —</option>
+            <option value="afa_korin_kivuli">ÁFA-körön kívüli ügylet</option>
+            <option value="afa_mentes">ÁFA-mentes (Áfa tv. 86. §)</option>
+            <option value="tartalmazza_27">Vételár tartalmazza a 27% ÁFÁ-t</option>
+            <option value="tartalmazza_5">Vételár tartalmazza az 5% ÁFÁ-t (új építésű)</option>
+            <option value="forditott">Fordított adózás (Áfa tv. 142. §)</option>
+          </Select>
+        </Field>
         <Field label="Önerő összege"><TextInput value={p.onero} onChange={(e) => patch("onero", e.target.value)} /></Field>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mt-3">
