@@ -183,7 +183,12 @@ export function Workspace() {
               Belső okiratszerkesztési tesztverzió ügyvédi irodák számára — szabálylogikával támogatott okiratszerkesztési demo. Jogi review szükséges.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <CaseSwitcher
+              current={c}
+              saveCurrent={() => saveCase(c)}
+              onLoaded={(loaded) => setC(loaded)}
+            />
             <Button size="sm" variant="default" onClick={() => setChecklistOpen(true)}>
               ✅ Ügyvédi ellenőrző lista
             </Button>
@@ -204,9 +209,10 @@ export function Workspace() {
               Demo adatok betöltése
             </Button>
             <Button size="sm" variant="secondary" onClick={handleClear}>
-              Mentés törlése
+              Aktív ügy törlése
             </Button>
           </div>
+
         </div>
       </header>
 
