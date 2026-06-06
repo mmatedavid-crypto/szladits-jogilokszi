@@ -100,7 +100,7 @@ export function generateContractDraft(c: CaseFile): string {
   if (biztOkm) {
     out.push("[BIZTONSÁGI OKMÁNYRA TÖRTÉNŐ NYOMTATÁSHOZ ELŐKÉSZÍTETT VÁLTOZAT]");
     out.push(
-      "  A 2013. évi CXXII. tv. (Földforgalmi tv.) és a kapcsolódó jogszabályok szerint mező- és erdőgazdasági föld adásvételi szerződését biztonsági okmányon („zöld papír") kell kiállítani. A jelen tervezetet az ügyvéd a biztonsági okmány lapjaira nyomtatja, a sorszámot az ügyiratban dokumentálja.",
+      "  A 2013. évi CXXII. tv. (Földforgalmi tv.) és a kapcsolódó jogszabályok szerint mező- és erdőgazdasági föld adásvételi szerződését biztonsági okmányon („zöld papír”) kell kiállítani. A jelen tervezetet az ügyvéd a biztonsági okmány lapjaira nyomtatja, a sorszámot az ügyiratban dokumentálja.",
     );
     out.push(`  Biztonsági okmány sorszáma: ${ff.biztonsagiOkmanySorszam || "____________________"}`);
     out.push(`  Kiállító / forgalmazó: ${ff.biztonsagiOkmanyKiallito || "____________________"}`);
@@ -108,7 +108,7 @@ export function generateContractDraft(c: CaseFile): string {
   } else if (agri) {
     out.push("[SIMA NYOMTATOTT VÁLTOZAT — földforgalmi ügylet]");
     out.push(
-      "  Figyelem: a mező- és erdőgazdasági föld adásvételi szerződését a Földforgalmi tv. szerint biztonsági okmányon („zöld papír") kell véglegesíteni. A jelen sima nyomtatott példány belső munkapéldányként, egyeztetésre szolgál.",
+      "  Figyelem: a mező- és erdőgazdasági föld adásvételi szerződését a Földforgalmi tv. szerint biztonsági okmányon („zöld papír”) kell véglegesíteni. A jelen sima nyomtatott példány belső munkapéldányként, egyeztetésre szolgál.",
     );
     out.push("");
   }
@@ -125,7 +125,7 @@ export function generateContractDraft(c: CaseFile): string {
   );
   out.push("");
   out.push(
-    "amely létrejött egyrészről az alább megjelölt eladó(k) (a továbbiakban: „Eladó"), másrészről az alább megjelölt vevő(k) (a továbbiakban: „Vevő"; az Eladó és a Vevő együttesen: „Felek") között a mai napon, az alulírott helyen és időben, az alábbi feltételekkel:",
+    "amely létrejött egyrészről az alább megjelölt eladó(k) (a továbbiakban: „Eladó”), másrészről az alább megjelölt vevő(k) (a továbbiakban: „Vevő”; az Eladó és a Vevő együttesen: „Felek”) között a mai napon, az alulírott helyen és időben, az alábbi feltételekkel:",
   );
   out.push("");
 
@@ -180,7 +180,7 @@ export function generateContractDraft(c: CaseFile): string {
 
   // 2. INGATLAN
   s = startSection(ctx, "A SZERZŐDÉS TÁRGYÁT KÉPEZŐ INGATLAN");
-  out.push(sub(s, "A szerződés tárgyát képezi az alábbi ingatlan (a továbbiakban: „Ingatlan"):"));
+  out.push(sub(s, "A szerződés tárgyát képezi az alábbi ingatlan (a továbbiakban: „Ingatlan”):"));
   out.push(
     `  – természetbeni cím: ${c.property.iranyitoszam || "[ir.sz.]"} ${c.property.telepules || "[település]"}, ${c.property.cim || "[utca, hsz.]"};`,
   );
@@ -279,7 +279,7 @@ export function generateContractDraft(c: CaseFile): string {
   out.push(
     sub(
       s,
-      `Felek az Ingatlan kölcsönösen elfogadott vételárát ${fmt(c.payment.teljesVetelar || "", ccy)} összegben határozzák meg (a továbbiakban: „Vételár"). ${afaSzoveg(c)}`,
+      `Felek az Ingatlan kölcsönösen elfogadott vételárát ${fmt(c.payment.teljesVetelar || "", ccy)} összegben határozzák meg (a továbbiakban: „Vételár”). ${afaSzoveg(c)}`,
     ),
   );
   if (c.payment.foglaloVan) {
@@ -557,7 +557,7 @@ export function generateContractDraft(c: CaseFile): string {
     out.push(
       sub(
         s,
-        `A jelen szerződést a Felek a Földforgalmi tv. és a 47/2014. (II. 26.) Korm. rendelet szerinti biztonsági okmányon („zöld papír") állítják ki. A biztonsági okmány sorszáma: ${ff.biztonsagiOkmanySorszam || REVIEW("biztonsági okmány sorszáma")}; kiállító/forgalmazó: ${ff.biztonsagiOkmanyKiallito || REVIEW("kiállító/forgalmazó megnevezése")}.`,
+        `A jelen szerződést a Felek a Földforgalmi tv. és a 47/2014. (II. 26.) Korm. rendelet szerinti biztonsági okmányon („zöld papír”) állítják ki. A biztonsági okmány sorszáma: ${ff.biztonsagiOkmanySorszam || REVIEW("biztonsági okmány sorszáma")}; kiállító/forgalmazó: ${ff.biztonsagiOkmanyKiallito || REVIEW("kiállító/forgalmazó megnevezése")}.`,
       ),
     );
     out.push(
