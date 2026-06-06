@@ -41,8 +41,37 @@ export function generateContractDraft(c: CaseFile): string {
 
   const sections: string[] = [];
 
+  // Földforgalmi „zöld papír" (biztonsági okmány) változat fejléce
+  const ff = c.special.foldforgalmi;
+  const agri =
+    c.transactionTypes.includes("termofold") ||
+    c.transactionTypes.includes("tanya") ||
+    (c.transactionTypes.includes("zartkert") &&
+      c.special.zartkertStatus === "mezogazdasagi");
+  const biztOkm = agri && ff.nyomtatasiValtozat === "biztonsagi_okmany";
+
   sections.push(DRAFT_BANNER);
   sections.push("");
+  if (biztOkm) {
+    sections.push("[BIZTONSÁGI OKMÁNYRA TÖRTÉNŐ NYOMTATÁSHOZ ELŐKÉSZÍTETT VÁLTOZAT]");
+    sections.push(
+      "  A 2013. évi CXXII. tv. (Földforgalmi tv.) és a kapcsolódó jogszabályok szerint mező- és erdőgazdasági föld adásvételi szerződését biztonsági okmányon („zöld papír") kell kiállítani. A jelen tervezetet az ügyvéd a biztonsági okmány lapjaira nyomtatja, a sorszámot az ügyiratban dokumentálja.",
+    );
+    sections.push(
+      `  Biztonsági okmány sorszáma: ${ff.biztonsagiOkmanySorszam || "____________________"}`,
+    );
+    sections.push(
+      `  Kiállító / forgalmazó: ${ff.biztonsagiOkmanyKiallito || "____________________"}`,
+    );
+    sections.push("");
+  } else if (agri) {
+    sections.push("[SIMA NYOMTATOTT VÁLTOZAT — földforgalmi ügylet]");
+    sections.push(
+      "  Figyelem: a mező- és erdőgazdasági föld adásvételi szerződését a Földforgalmi tv. szerint biztonsági okmányon („zöld papír") kell véglegesíteni. A jelen sima nyomtatott példány belső munkapéldányként, egyeztetésre szolgál.",
+    );
+    sections.push("");
+  }
+
   sections.push("INGATLAN ADÁSVÉTELI SZERZŐDÉS");
   sections.push("(tervezet — ügyvédi ellenőrzésre és ellenjegyzésre előkészítve)");
   sections.push("");
