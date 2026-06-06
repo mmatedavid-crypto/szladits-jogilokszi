@@ -1249,8 +1249,8 @@ function Step7({
         <Button size="sm" variant="outline" onClick={() => void onExport("review-md")}>
           Klauzula review report megnyitása
         </Button>
-        <Button size="sm" variant="secondary" onClick={onPrint}>
-          Nyomtatás / PDF
+        <Button size="sm" variant="default" onClick={onPrint}>
+          📄 PDF letöltése (ügyvédi)
         </Button>
         <Button size="sm" variant="outline" onClick={onCopy}>
           Másolás vágólapra
