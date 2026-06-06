@@ -200,6 +200,12 @@ export interface EljaroUgyved {
   kaszSzam: string;
   iroda: string;
   irodaCim: string;
+  email?: string;
+  telefon?: string;
+  website?: string;
+  rovidHeader?: string;
+  logoDataUrl?: string;
+  pecsetDataUrl?: string;
 }
 
 export interface IntakeStatus {

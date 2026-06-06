@@ -23,7 +23,8 @@ function formatDraftDate(value?: string): string {
 }
 
 const REVIEW = (msg: string) => `[HIÁNYZÓ ADAT / ÜGYVÉDI DÖNTÉS SZÜKSÉGES: ${msg}]`;
-const LEGAL_REVIEW = (msg: string) => `[ÜGYVÉDI ELLENŐRZÉS SZÜKSÉGES: ${msg}]`;
+// A részletes jogi indoklást a clauseReviewReport tartalmazza; a szerződés szövegében csak rövid marker jelenik meg.
+const LEGAL_REVIEW = (_msg: string) => `[ÜGYVÉDI ELLENŐRZÉS SZÜKSÉGES — részletek a klauzula review reportban]`;
 
 function describeParty(p: Party): string {
   if (p.kind === "termeszetes") {
@@ -153,10 +154,15 @@ export function generateContractDraft(c: CaseFile): string {
   if (cegek.length > 0) {
     cegek.forEach((co) => {
       if (co.kind !== "ceg") return;
+      const mode = (co.kepviseletModja || "").toLowerCase();
+      let kepvSzov: string;
+      if (mode.includes("önál") || mode.includes("onal")) kepvSzov = "önállóan";
+      else if (mode.includes("együt") || mode.includes("egyut")) kepvSzov = "együttesen";
+      else kepvSzov = REVIEW("cég képviseleti módja (önálló vagy együttes) — cégkivonat alapján rögzítendő");
       out.push(
         sub(
           s,
-          `A ${co.cegnev || "[cégnév]"} (cégjegyzékszám: ${co.cegjegyzekszam || "[cgj.]"}) nyilatkozik, hogy a jelen szerződés megkötése a társaság rendes ügymenetébe tartozik, létesítő okiratával és a hatályos cégjegyzékkel összhangban áll; képviselője a cégkivonat és az aláírási címpéldány alapján önállóan/együttesen jogosult a társaság képviseletére. A cégkivonat kelte: ${co.cegkivonatDatuma || "[dátum]"}.`,
+          `A ${co.cegnev || "[cégnév]"} (cégjegyzékszám: ${co.cegjegyzekszam || "[cgj.]"}) nyilatkozik, hogy a jelen szerződés megkötése a társaság rendes ügymenetébe tartozik, létesítő okiratával és a hatályos cégjegyzékkel összhangban áll; képviselője a cégkivonat és az aláírási címpéldány alapján ${kepvSzov} jogosult a társaság képviseletére. A cégkivonat kelte: ${co.cegkivonatDatuma || "[dátum]"}.`,
         ),
       );
     });
@@ -198,10 +204,9 @@ export function generateContractDraft(c: CaseFile): string {
     out.push(
       sub(
         s,
-        "Az adásvételhez kapcsolódóan teremgarázs- és/vagy tárolóhasználat is átszáll a Vevőre. A pontos jogi minősítés (külön albetét, eszmei hányad, vagy kizárólagos használati jog) a tulajdoni lap alapján: " +
-          (c.property.helyrajziSzam
-            ? `${c.property.helyrajziSzam} hrsz.`
-            : LEGAL_REVIEW("teremgarázs/tároló jogi státusza — tulajdoni lapon ellenőrizendő")),
+        "Az adásvétel részeként a Vevőre átszáll a teremgarázs és tároló használatának joga. A teremgarázs/tároló pontos jogi minősítését (külön albetét; eszmei hányad; kizárólagos használati jog) " +
+          REVIEW("teremgarázs/tároló jogi státusza (külön albetét / eszmei hányad / kizárólagos használati jog) — tulajdoni lap alapján rögzítendő") +
+          ".",
       ),
     );
   }

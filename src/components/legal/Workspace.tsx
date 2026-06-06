@@ -144,27 +144,26 @@ export function Workspace() {
                   .join("\n");
     void navigator.clipboard.writeText(text);
   };
-  const handlePrint = () => {
-    // Külön, "tiszta" nyomtatási ablak: a böngésző URL fejléc/lábléc helyett az
-    // okirat címét és oldalszámát mutatja, projekt-URL nélkül. A felhasználónak
-    // a nyomtatási dialógusban érdemes a "Headers and footers" opciót kikapcsolni.
-    const title = `${c.ugyAzonosito || "Ingatlan-adasveteli-szerzodes"} — szerződéstervezet`;
-    const safe = contract.replace(/[<>&]/g, (s) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" })[s] as string);
-    const html = `<!doctype html><html lang="hu"><head><meta charset="utf-8"><title>${title}</title>
-<style>
-  @page { size: A4; margin: 22mm 20mm 22mm 20mm; }
-  html, body { background: #fff; color: #111; }
-  body { font-family: "Times New Roman", Georgia, serif; font-size: 12pt; line-height: 1.45; margin: 0; padding: 0; }
-  pre { white-space: pre-wrap; word-wrap: break-word; font-family: inherit; font-size: inherit; margin: 0; }
-  @media print { .noprint { display: none; } }
-</style></head><body><pre>${safe}</pre>
-<script>window.addEventListener('load', function(){ setTimeout(function(){ window.focus(); window.print(); }, 100); });<\/script>
-</body></html>`;
-    const w = window.open("", "_blank", "width=900,height=1100");
-    if (!w) return;
-    w.document.open();
-    w.document.write(html);
-    w.document.close();
+  const handlePrint = async () => {
+    // Kontrollált PDF export — NEM használunk window.print()-et, hogy a böngésző
+    // által beillesztett URL / preview-... / .app / időbélyeg fejléc-lábléc
+    // NE jelenjen meg a kimeneten. A PDF jsPDF-fel készül, beágyazott Noto Serif
+    // fonttal, oldalszám-lábléccel, ügyvédi letterhead-del.
+    try {
+      const { generateContractPdf } = await import("@/lib/legal/contractPdf");
+      const blob = await generateContractPdf(c, contract);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${c.ugyAzonosito || "tervezet"}-szerzodes.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("PDF export hiba:", err);
+      alert(
+        "A PDF generálása nem sikerült. Próbálja meg a Word (.docx) exportot, majd nyomtassa abból PDF-be a böngésző fejléc/lábléc nélkül.",
+      );
+    }
   };
   const exportFile = async (
     kind: "txt" | "html" | "docx" | "review-md",
@@ -274,12 +273,21 @@ export function Workspace() {
               />
             </div>
             <div className="pt-2 border-t border-sidebar-border">
-              <div className="font-semibold text-foreground mb-1">Eljáró ügyvéd</div>
+              <div className="font-semibold text-foreground mb-1">Ügyvédi iroda (letterhead)</div>
+              <p className="text-[10px] text-muted-foreground mb-1">
+                Ez az adatcsomag jelenik meg a generált PDF tetején fejlécként és az ellenjegyzésnél. Szladits-brand a kliensnek küldött szerződésen NEM látszik.
+              </p>
+              <input
+                className="mt-1 w-full rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground"
+                value={c.eljaroUgyved.iroda}
+                onChange={(e) => update((d) => void (d.eljaroUgyved.iroda = e.target.value))}
+                placeholder="Ügyvédi iroda neve"
+              />
               <input
                 className="mt-1 w-full rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground"
                 value={c.eljaroUgyved.nev}
                 onChange={(e) => update((d) => void (d.eljaroUgyved.nev = e.target.value))}
-                placeholder="dr. Vezetéknév Keresztnév"
+                placeholder="dr. Vezetéknév Keresztnév (eljáró ügyvéd)"
               />
               <input
                 className="mt-1 w-full rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground"
@@ -289,15 +297,33 @@ export function Workspace() {
               />
               <input
                 className="mt-1 w-full rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground"
-                value={c.eljaroUgyved.iroda}
-                onChange={(e) => update((d) => void (d.eljaroUgyved.iroda = e.target.value))}
-                placeholder="Ügyvédi iroda neve"
-              />
-              <input
-                className="mt-1 w-full rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground"
                 value={c.eljaroUgyved.irodaCim}
                 onChange={(e) => update((d) => void (d.eljaroUgyved.irodaCim = e.target.value))}
                 placeholder="Iroda címe"
+              />
+              <input
+                className="mt-1 w-full rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground"
+                value={c.eljaroUgyved.telefon ?? ""}
+                onChange={(e) => update((d) => void (d.eljaroUgyved.telefon = e.target.value))}
+                placeholder="Telefon"
+              />
+              <input
+                className="mt-1 w-full rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground"
+                value={c.eljaroUgyved.email ?? ""}
+                onChange={(e) => update((d) => void (d.eljaroUgyved.email = e.target.value))}
+                placeholder="E-mail"
+              />
+              <input
+                className="mt-1 w-full rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground"
+                value={c.eljaroUgyved.website ?? ""}
+                onChange={(e) => update((d) => void (d.eljaroUgyved.website = e.target.value))}
+                placeholder="Weboldal"
+              />
+              <input
+                className="mt-1 w-full rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground"
+                value={c.eljaroUgyved.rovidHeader ?? ""}
+                onChange={(e) => update((d) => void (d.eljaroUgyved.rovidHeader = e.target.value))}
+                placeholder="Rövid header sor (pl. szakterület)"
               />
             </div>
           </div>
@@ -1223,8 +1249,8 @@ function Step7({
         <Button size="sm" variant="outline" onClick={() => void onExport("review-md")}>
           Klauzula review report megnyitása
         </Button>
-        <Button size="sm" variant="secondary" onClick={onPrint}>
-          Nyomtatás / PDF
+        <Button size="sm" variant="default" onClick={onPrint}>
+          📄 PDF letöltése (ügyvédi)
         </Button>
         <Button size="sm" variant="outline" onClick={onCopy}>
           Másolás vágólapra
