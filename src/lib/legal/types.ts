@@ -178,6 +178,8 @@ export interface SpecialRules {
   foldforgalmi: FoldforgalmiModul;
 }
 
+import type { ModulokState } from "./modulok";
+
 export interface CaseFile {
   ugyAzonosito: string;
   letrehozva: string;
@@ -187,6 +189,7 @@ export interface CaseFile {
   payment: PaymentPlan;
   possession: Possession;
   special: SpecialRules;
+  modulok: ModulokState;
 }
 
 export type Severity = "alacsony" | "kozepes" | "magas" | "kritikus";
