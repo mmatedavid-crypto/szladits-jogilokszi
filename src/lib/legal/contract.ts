@@ -208,9 +208,8 @@ export function generateContractDraft(c: CaseFile): string {
     out.push(
       sub(
         s,
-        "Az adásvétel részeként a Vevőre átszáll a teremgarázs és tároló használatának joga. A teremgarázs/tároló pontos jogi minősítését (külön albetét; eszmei hányad; kizárólagos használati jog) " +
-          REVIEW("teremgarázs/tároló jogi státusza (külön albetét / eszmei hányad / kizárólagos használati jog) — tulajdoni lap alapján rögzítendő") +
-          ".",
+        "Az adásvétel részeként a teremgarázs és/vagy tároló jogi minősítése (külön albetét, eszmei hányad vagy kizárólagos használati jog) és átruházásának módja a tulajdoni lap alapján rögzítendő. " +
+          REVIEW("teremgarázs/tároló jogi státusza"),
       ),
     );
   }
