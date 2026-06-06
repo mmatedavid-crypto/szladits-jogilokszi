@@ -84,6 +84,10 @@ export function emptyCase(): CaseFile {
       },
     },
     modulok: emptyModulok(),
+    intake: {
+      elado: { token: "", letrehozva: "", utoljaraMentve: "", beadva: false, beadvaIdo: "" },
+      vevo: { token: "", letrehozva: "", utoljaraMentve: "", beadva: false, beadvaIdo: "" },
+    },
   };
 }
 
