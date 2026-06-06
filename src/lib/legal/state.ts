@@ -406,6 +406,7 @@ export function demoCase(): CaseFile {
   base.payment = {
     ...base.payment,
     teljesVetelar: "85000000",
+    afaKezeles: "afa_korin_kivuli",
     foglaloVan: true,
     foglaloOsszeg: "5000000",
     elolegVan: true,
