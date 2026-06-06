@@ -300,6 +300,7 @@ export function Workspace() {
             )}
             {step === 7 && (
               <Step7
+                c={c}
                 tab={outputTab}
                 setTab={setOutputTab}
                 contract={contract}
