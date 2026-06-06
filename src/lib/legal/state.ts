@@ -125,6 +125,12 @@ export function newId(prefix = "p"): string {
 export function demoCase(): CaseFile {
   const base = emptyCase();
   base.ugyAzonosito = "DEMO-2026-001";
+  base.eljaroUgyved = {
+    nev: "dr. Szladits Anna",
+    kaszSzam: "36071234",
+    iroda: "Szladits Ügyvédi Iroda",
+    irodaCim: "1051 Budapest, Október 6. utca 12. II/4.",
+  };
   base.transactionTypes = ["lakas", "tarsashazi_albetet", "hitellel_erintett"];
   const elado: NaturalPerson = {
     kind: "termeszetes",
