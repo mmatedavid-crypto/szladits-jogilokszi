@@ -322,21 +322,23 @@ export function generateContractDraft(c: CaseFile): string {
     nextNo++;
   }
 
-  // 11. Termőföld
-  const agri =
-    c.transactionTypes.includes("termofold") ||
-    c.transactionTypes.includes("tanya") ||
-    (c.transactionTypes.includes("zartkert") &&
-      c.special.zartkertStatus === "mezogazdasagi");
+  // 11. Termőföld (a fent kiszámolt `agri` és `ff` flageket használjuk)
   if (agri) {
     sections.push(`${nextNo}. FÖLDFORGALMI RENDELKEZÉSEK (TERMŐFÖLD / MEZŐGAZDASÁGI INGATLAN)`);
     sections.push("");
     sections.push(
-      "  Felek tudomásul veszik, hogy a mező- és erdőgazdasági földek forgalmáról szóló 2013. évi CXXII. törvény (Földforgalmi tv.) rendelkezéseit alkalmazni kell: a szerződést a települési önkormányzat jegyzőjénél kifüggesztésre kell benyújtani az elővásárlási jogosultak nyilatkoztatása céljából; a szerződés hatálybalépésének feltétele a mezőgazdasági igazgatási szerv jóváhagyó határozatának jogerőre emelkedése. A Vevő szerzőképességét nyilatkozat útján igazolja.",
+      `  ${nextNo}.1. Felek tudomásul veszik, hogy a mező- és erdőgazdasági földek forgalmáról szóló 2013. évi CXXII. törvény (Földforgalmi tv.) rendelkezéseit alkalmazni kell: a szerződést a települési önkormányzat jegyzőjénél kifüggesztésre kell benyújtani az elővásárlási jogosultak nyilatkoztatása céljából; a szerződés hatálybalépésének feltétele a mezőgazdasági igazgatási szerv jóváhagyó határozatának jogerőre emelkedése. A Vevő szerzőképességét és a tulajdonszerzéshez szükséges nyilatkozatait külön, a Földforgalmi tv. szerinti formában teszi meg.`,
+    );
+    sections.push(
+      `  ${nextNo}.2. A jelen szerződést a Felek a Földforgalmi tv. és a 47/2014. (II. 26.) Korm. rendelet szerinti biztonsági okmányon („zöld papír") állítják ki. A biztonsági okmány sorszáma: ${ff.biztonsagiOkmanySorszam || "____________________"}; kiállító/forgalmazó: ${ff.biztonsagiOkmanyKiallito || "____________________"}.`,
+    );
+    sections.push(
+      `  ${nextNo}.3. Kifüggesztési záradék helye (a jegyző tölti ki): a szerződést a települési önkormányzat jegyzője ____________ napján kifüggesztette, a kifüggesztés ____________ napján járt le. Az elővásárlási jognyilatkozatok átvételét és a mezőgazdasági igazgatási szervhez történő továbbítást a jegyző külön igazolja.`,
     );
     sections.push("");
     nextNo++;
   }
+
 
   // 12. Társasházi
   if (c.property.tarsashaziAlbetet) {
