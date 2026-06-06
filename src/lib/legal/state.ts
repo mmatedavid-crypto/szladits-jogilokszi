@@ -39,6 +39,7 @@ export function emptyCase(): CaseFile {
     payment: {
       teljesVetelar: "",
       penznem: "HUF",
+      afaKezeles: "",
       foglaloVan: false,
       foglaloOsszeg: "",
       elolegVan: false,
