@@ -149,12 +149,16 @@ export function Workspace() {
     setOutputTab("szerzodes");
     setTimeout(() => window.print(), 50);
   };
-  const exportFile = async (kind: "txt" | "html" | "docx") => {
-    const filename = `${c.ugyAzonosito || "tervezet"}-szerzodes.${kind}`;
+  const exportFile = async (
+    kind: "txt" | "html" | "docx",
+    variant: "sima" | "biztonsagi_okmany" = "sima",
+  ) => {
+    const suffix = variant === "biztonsagi_okmany" ? "-zoldpapir" : "";
+    const filename = `${c.ugyAzonosito || "tervezet"}-szerzodes${suffix}.${kind}`;
     let blob: Blob;
     if (kind === "docx") {
       const { generateContractDocx } = await import("@/lib/legal/docx");
-      blob = await generateContractDocx(contract, c.ugyAzonosito);
+      blob = await generateContractDocx(contract, c.ugyAzonosito, variant, c);
     } else {
       const content =
         kind === "txt"
