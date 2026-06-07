@@ -19,6 +19,7 @@ import {
   createCase,
   listCases,
   newId,
+  hydrateCases,
 } from "@/lib/legal/state";
 import {
   calculateAge,
@@ -76,14 +77,18 @@ export function Workspace() {
     );
 
   useEffect(() => {
-    let loaded = loadCase();
-    // Ha még nincs egyetlen mentett ügy sem, hozzunk létre egy újat,
-    // hogy a CaseSwitcher tudjon közte és új ügyek között váltani.
-    if (listCases().length === 0) {
-      loaded = createCase("Új ügy");
-    }
-    setC(loaded);
-    setHydrated(true);
+    let cancelled = false;
+    void (async () => {
+      await hydrateCases();
+      if (cancelled) return;
+      let loaded = loadCase();
+      if (listCases().length === 0) {
+        loaded = createCase("Új ügy");
+      }
+      setC(loaded);
+      setHydrated(true);
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {

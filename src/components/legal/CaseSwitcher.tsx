@@ -219,9 +219,7 @@ export function CaseSwitcher({ current, saveCurrent, onLoaded }: Props) {
               })}
             </ul>
             <div className="px-3 py-2 border-t border-border text-[11px] text-muted-foreground">
-              Az ügyek a böngészőben (localStorage) tárolódnak. Éles
-              használathoz GDPR-kompatibilis szerveroldali tárolás
-              szükséges.
+              Az ügyek a fiókjához kötve, EU-szervereken, titkosítva tárolódnak.
             </div>
           </div>
         </>
