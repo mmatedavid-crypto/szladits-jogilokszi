@@ -1,142 +1,96 @@
+## Cél
 
-# Szladits Magánjogi Asszisztens — Belső okiratszerkesztési tesztverzió
+Komoly, fehér ügyvédi landing oldal + Google bejelentkezés + fiókhoz kötött ügytárolás Lovable Cloudban, RLS-sel. A meglévő Workspace funkcióit (klauzula review, contract generation, PDF/DOCX export, intake linkek, legal verify script) érintetlenül hagyjuk — csak a perzisztencia réteget cseréljük.
 
-Belső, magyar nyelvű demo ügyvédi irodáknak: ingatlan adásvételi szerződés tervezetét állítja elő szabálylogika alapján. Nincs login, fizetés, marketing, publikus oldal. Minden kimenet "TERVEZET — ügyvédi ellenőrzés és ellenjegyzés szükséges" figyelmeztetéssel.
+## 1. Lovable Cloud bekapcsolása + Google auth
 
-## Architektúra
+- Cloud enable.
+- Google provider konfig (`supabase--configure_social_auth`).
+- Apple most kimarad — később ön intézi a Services ID/Key konfigot a Cloud Auth panelban.
 
-- TanStack Start (meglévő stack), TypeScript strict
-- Egyetlen útvonal: `/` (a teljes app egy stepper-alapú workspace)
-- Állapot: React state + `localStorage` perzisztencia (autosave)
-- Nincs backend, nincs külső API, nincs AI hívás — minden logika determinisztikus TS kód
-- Nyomtatás: böngésző `window.print()`, plusz `.txt` és `.html` export
-- Komoly, jogi/professzionális vizuális irány: világosszürke háttér, sötétkék (és másodlagos sötét bordó) akcentus, olvasható tipográfia, sűrű űrlapok. Design tokenek a `src/styles.css`-ben (oklch).
+## 2. Adatmodell (single JSON-blob megközelítés)
 
-## Layout
+A jelenlegi `CaseFile` típus mély, beágyazott (parties, property, payment, possession, modulok, intake, clauseReviewStates, checklistStates…). Külön normalizált táblákba szétszedni most több kockázattal jár, mint haszonnal: az egész contract generator, clause matrix és intake flow `CaseFile` objektumon dolgozik. Egy refactor itt nagy eséllyel törne valamit a verify script alól.
 
-```text
-+--------------------------------------------------------------+
-| Szladits Magánjogi Asszisztens                               |
-| Belső okiratszerkesztési tesztverzió ügyvédi irodák számára  |
-+----------------+---------------------------------------------+
-| Lépések        | Aktív lépés űrlapjai                        |
-| 1 Ügylet típus |                                             |
-| 2 Felek        |                                             |
-| 3 Ingatlan     |                                             |
-| 4 Vételár      |                                             |
-| 5 Birtokba ad. |                                             |
-| 6 Speciális    |                                             |
-| 7 Kimenetek    |                                             |
-+----------------+---------------------------------------------+
-| Élő panel: Hiányzó adatok | Kockázati flagek (folyamatosan)  |
-+--------------------------------------------------------------+
-| Footer: belső tesztverzió — nem nyilvános termék             |
-+--------------------------------------------------------------+
-```
-
-A 7. lépés tabokra bomlik: Szerződéstervezet · Hiányzó adatok · Kockázati lista · Mellékletlista · Ügyleti összefoglaló.
-
-Globális műveletek a fejlécben: `Demo adatok betöltése`, `Mentés törlése`, `Szerződés generálása`, `Nyomtatás / PDF`, `Export .html`, `Export .txt`, `Másolás vágólapra`.
-
-## Adatmodell (`src/lib/legal/types.ts`)
-
-`CaseFile`, `TransactionFlags`, `Party` (diszkriminált unió: `NaturalPerson` | `Company`), `Representative`, `Property`, `Encumbrances`, `PaymentPlan`, `Possession`, `SpecialRules` (földforgalmi, zártkert, kiskorú, gondnokolt, céges, külföldi), `GeneratedDocument`, `RiskFlag` (severity: `alacsony|közepes|magas|kritikus`), `MissingField` (csoportokba sorolva), `AttachmentItem`.
-
-## Determinisztikus logikai modulok (`src/lib/legal/`)
-
-Külön fájlok, tisztán tesztelhetők:
-
-- `age.ts`: `calculateAge`, `determineCapacityStatus`
-- `risks/minor.ts`: `detectMinorRisk`
-- `risks/guardianship.ts`: `detectGuardianshipRisk`
-- `risks/agricultural.ts`: `detectAgriculturalLandRisk`
-- `risks/zartkert.ts`: `detectZartkertRisk`
-- `risks/loan.ts`: `detectLoanRisk`
-- `risks/encumbrance.ts`: `detectEncumbranceRisk`
-- `risks/company.ts`: `detectCompanyPartyRisk`
-- `risks/foreign.ts`: `detectForeignPartyRisk`
-- `missing.ts`: `detectMissingFields` (csoportosítva: felek/ingatlan/vételár/fizetés/birtokbaadás/jóváhagyások/mellékletek)
-- `riskFlags.ts`: `generateRiskFlags` (a fenti detect-ek összevonása)
-- `attachments.ts`: `generateAttachmentList` (feltételes mellékletek)
-- `summary.ts`: `generateCaseSummary`
-- `contract.ts`: `generateContractDraft` (template-alapú szerződésszöveg)
-
-Minden generált dokumentum első sora:
-`TERVEZET — ügyvédi ellenőrzés és ellenjegyzés szükséges. A rendszer nem helyettesíti az ügyvéd szakmai döntését.`
-
-## Workflow lépések (kötelező mezők szerint)
-
-1. **Ügylet típusa** — checkbox-lista a megadott típusokkal (lakás … vegyes, hitellel/tehermentesítéssel érintett, céges fél). Zártkert választása alkérdést nyit. Termőföld/tanya/agrár-zártkert automatikusan aktiválja a Földforgalmi modult a 6. lépésben.
-2. **Felek** — dinamikus lista (több eladó/vevő). Természetes személy / cég váltó. Természetes személynél `calculateAge` automatikusan beállítja a státuszt: 14 alatt cselekvőképtelen kiskorú; 14–18 korlátozottan cselekvőképes; 18+ nagykorú + cselekvőképesség selector. Kiskorúnál törvényes képviselő blokk + gyámhatósági jóváhagyás (default „ügyvédi ellenőrzést igényel"). Cégnél cégkivonat / aláírási címpéldány mezők. Külföldi állampolgárság vagy külföldi székhely külön kockázatot generál.
-3. **Ingatlan** — cím, hrsz, típus, művelési ág, alapterület, tulajdoni hányad, társasházi/teremgarázs flagek, energetikai tanúsítvány, birtoklási állapot. Tulajdoni lap teher-toggle-ök → automatikus kockázatok és tehermentesítési követelmény.
-4. **Vételár és fizetés** — összeg, pénznem, foglaló/előleg/önerő/hitel/letét/részletfizetés. Hitelnél bank, összeg, folyósítási határidő, és kötelező kockázati klauzulák (banki folyósítás, bejegyzési engedély kezelése, függőben tartás placeholder, jelzálog/elidegenítési tilalom).
-5. **Birtokbaadás** — dátum, feltételek, közmű, kulcs, kiköltözés, ingóságok, kötbér.
-6. **Speciális modulok** — feltételesen megjelenő szekciók: Földforgalmi ellenőrző · Zártkert · Kiskorú/gondnokolt · Céges fél · Külföldi fél. Mindegyik az adott check-listával és kötelező figyelmeztetésekkel.
-7. **Kimenetek** — 5 tab: szerződéstervezet, hiányzó adatok, kockázati lista (cím, súlyosság, miért fontos, mit ellenőrizzen az ügyvéd), mellékletlista, ügyleti összefoglaló.
-
-## Élő mellék-panel
-
-A jobb/alsó panel folyamatosan futtatja `detectMissingFields` és `generateRiskFlags` függvényeket az aktuális állapoton, hogy az ügyvéd minden lépésnél lássa a hiányokat és kockázatokat — nem csak a 7. lépésnél.
-
-## Szerződéstervezet sablon
-
-Magyar, szakaszolt sablon (Felek · Előzmények · Az ingatlan · Vételár és fizetés · Tehermentesítés · Birtokbaadás · Szavatosság és nyilatkozatok · Kiskorú/korlátozott cselekvőképesség speciális rendelkezései · Termőföld/földforgalmi figyelmeztetés · Mellékletek · Záró rendelkezések · Aláírások · Ügyvédi ellenjegyzés placeholder). A szakaszok feltételesen jelennek meg a flagek alapján. Minden szöveg `TERVEZET` jelöléssel és „jogi review szükséges" lábjegyzettel.
-
-## Tiltott / engedett szóhasználat
-
-Tiltva: „végleges szerződés", „jogilag garantált", „mindig hatályos jogszabályoknak megfelelő", „ügyvéd nélkül használható". Használva: „ügyvédi ellenőrzésre előkészített tervezet", „szabálylogikával támogatott okiratszerkesztési demo", „belső tesztverzió ügyvédi irodák számára", „jogi review szükséges". Lint-szerű ellenőrzés nem kell — a sablonok fixek.
-
-## Fájlszerkezet
+Pragmatikus megoldás:
 
 ```text
-src/
-  routes/index.tsx                 # workspace shell (header, sidebar, panels)
-  components/legal/
-    StepSidebar.tsx
-    LivePanel.tsx                  # hiányzó adatok + kockázatok élőben
-    steps/Step1Transaction.tsx
-    steps/Step2Parties.tsx
-    steps/Step3Property.tsx
-    steps/Step4Payment.tsx
-    steps/Step5Possession.tsx
-    steps/Step6Special.tsx
-    steps/Step7Outputs.tsx
-    outputs/ContractDraft.tsx
-    outputs/MissingList.tsx
-    outputs/RiskList.tsx
-    outputs/AttachmentList.tsx
-    outputs/CaseSummary.tsx
-    PartyEditor.tsx
-    EncumbranceEditor.tsx
-    Toolbar.tsx                    # globális akciógombok
-  lib/legal/
-    types.ts
-    state.ts                       # localStorage perzisztencia + demo data
-    age.ts
-    missing.ts
-    attachments.ts
-    summary.ts
-    contract.ts
-    riskFlags.ts
-    risks/{minor,guardianship,agricultural,zartkert,loan,encumbrance,company,foreign}.ts
-  styles.css                       # token frissítések (sötétkék/bordó akcentus)
+public.matters
+  id uuid pk
+  user_id uuid → auth.users
+  cimke text
+  ugy_azonosito text
+  data jsonb           -- a teljes CaseFile, kivéve id/user_id/timestamp
+  letrehozva timestamptz
+  utoljara_mentve timestamptz
+  deleted_at timestamptz null     -- soft delete
+  created_at, updated_at
+
+public.intake_tokens
+  token text pk
+  matter_id uuid → matters(id)
+  szerep text check ('elado','vevo')
+  beadva bool, beadva_ido timestamptz
+  created_at, updated_at
 ```
 
-## Korlátozások (a végén kommunikálva)
+Indexek: `matters(user_id, utoljara_mentve desc)`, `intake_tokens(matter_id)`.
 
-- Nem helyettesíti az ügyvédet; csak demo szabálylogika
-- Földforgalmi modul csak ellenőrző lista, nem teljes automatizmus
-- Tulajdoni lap és cégadat nincs lekérve külső rendszerből
-- A sablon egy fix vázlat, nem minden ügyleti variációt fed le
-- Nincs nyelvi/jogszabályi auto-frissítés
+GRANTs + RLS minden táblára kötelezően kiadva:
+- `matters`: csak `auth.uid() = user_id` lát/ír (SELECT/INSERT/UPDATE/DELETE). Anonra semmi.
+- `intake_tokens`: tulajdonos ügyvéd CRUD-ot kap (`EXISTS matters WHERE user_id = auth.uid()`); az adatbekérő publikus oldal viszont **nem** olvas közvetlenül — ehelyett egy `get_intake_by_token(token)` SECURITY DEFINER függvény ad vissza csak a tokenhez tartozó minimális szeletet, és egy `save_intake_by_token(token, payload)` függvény ír. Így a `/adatbekero/$token` route továbbra is auth nélkül működik, de nem lát be az egész `matters.data`-ba.
 
-## Megvalósítási sorrend
+## 3. Storage réteg csere
 
-1. Tokenek + layout shell (header, sidebar, élő panel, footer)
-2. Adatmodell + localStorage + demo seed
-3. Lépés 1–5 űrlapok
-4. Determinisztikus logikai modulok (age/missing/risks/attachments/summary)
-5. Lépés 6 speciális modulok
-6. Szerződésgenerátor sablon
-7. Lépés 7 kimeneti tabok + export/print
-8. Élő panel bekötése, végső szövegellenőrzés, demo adatok finomítása
+`src/lib/legal/state.ts` jelenleg localStorage-ot használ (`listCases`, `loadCase`, `saveCase`, `createCase`, `switchCase`, `duplicateCase`, `renameCase`, `deleteCase`, `findCaseByIntakeToken`).
+
+Átalakítás:
+- Bevezetünk egy `casesStore` modult amelynek ugyanaz a publikus API-ja (`listCases`, `loadCase`, …), de háttérben szerver fn-eket hív (`getMatters`, `getMatter`, `saveMatter`, `createMatter`, `deleteMatter`, `duplicateMatter`, `renameMatter`).
+- Szerver fn-ek `requireSupabaseAuth` middleware-rel, `user_id = context.userId`.
+- A Workspace komponensben az autosave debounce-olt `saveMatter`-t hív.
+- Tiszta lap: localStorage-ot már nem írunk/olvasunk. Régi adat figyelmeztetés nélkül helyben marad a böngészőben, de nem importáljuk.
+- `findCaseByIntakeToken` → a publikus intake oldal a fenti `get_intake_by_token` RPC-t hívja, nem localStorage-ot.
+
+## 4. Route-ok
+
+- `/` — új landing (Playfair Display címek, Inter body, sok fehér, mélykék #0D1B2A + arany #B89A5B akcent). Tartalom: hero + 4 funkciókártya + márkajegyek sáv + footer. Egyetlen elsődleges CTA: **„Asszisztens megnyitása"** → ha van session: `/app`, ha nincs: `/auth`.
+- `/auth` — Google gomb + (disabled) Apple gomb tooltippel „Konfigurációra vár". Nincs email/password most.
+- `/_authenticated/app` — a jelenlegi `Workspace`. Az `/` és `/app` szétválik: `/` mostantól landing.
+- `_authenticated` layout: integration-managed `ssr: false`, `supabase.auth.getUser()` gate, signed-out → `/auth`.
+- `/adatbekero/$token` változatlan public route.
+
+## 5. UI design tokenek
+
+`src/styles.css` bővítése a brand színekkel:
+```
+--brand-ink: 0D1B2A    (primary)
+--brand-graphite: 2A2E34
+--brand-slate: 6B7280
+--brand-paper: F5F6F8  (background)
+--brand-line: E6E8EC
+--brand-gold: B89A5B   (accent)
+```
++ Playfair Display (display) és Inter (body) Google Font linkek. Komponenseket semantic tokeneken keresztül színezünk.
+
+## 6. Auth state plumbing
+
+- Root route: egyetlen `onAuthStateChange` listener → `router.invalidate()` SIGNED_IN/OUT/USER_UPDATED-nél, `queryClient.invalidateQueries()` ha van session.
+- `src/start.ts`: `attachSupabaseAuth` registráció a `functionMiddleware`-ben.
+
+## 7. Tesztelés / validáció
+
+- `bun scripts/verify-legal-demo.ts` — változatlanul fusson le, mert csak `contract.ts` / `clauseMatrix.ts` szerkezetre épül, amit nem érintünk.
+- Smoke: bejelentkezés → új ügy → mentés → reload → ügy visszatöltődik. Kijelentkezés → `/app` redirect `/auth`-ra.
+- `/adatbekero/$token` továbbra is auth nélkül elérhető.
+
+## Mit NEM csinálok ebben a körben
+
+- Nem szedem szét a CaseFile-t normalizált táblákra (matters / parties / properties / payments / encumbrances / possession / clause_review_states / checklist_states külön táblákba). Egy JSONB oszlop sokkal kisebb regressziós kockázat a meglévő contract/clause logikára. Ha később külön szeretné, az egy önálló migráció lesz.
+- Nem építek marketing landinget (pricing, blog, careers). Egy oldal, egy CTA, komoly hangvétel.
+- Nem nyúlok a `LawRef` struktúrához, klauzula matrixhoz, contract.ts-hez, contractPdf.ts-hez, clause review reporthoz, HIANYOS-TERVEZET guardrailhez.
+
+## Ismert nyitott pontok jelzésre a reportban
+
+- Apple OAuth provider konfig hiányzik (szándékos).
+- A korábban localStorage-ban tárolt ügyek nem kerülnek importálásra (egyeztetett, „tiszta lap").
+- A `saved_exports` táblát nem hozom létre, mert a jelenlegi export flow nem perzisztál export metaadatot — ha kell, külön körben.
