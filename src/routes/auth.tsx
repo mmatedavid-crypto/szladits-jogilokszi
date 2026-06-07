@@ -60,7 +60,7 @@ function AuthPage() {
           <div className="mt-8 space-y-3">
             <button
               type="button"
-              onClick={onGoogle}
+              onClick={() => onOAuth("google")}
               disabled={busy}
               className="w-full inline-flex items-center justify-center gap-3 rounded-md border border-border bg-background px-4 py-3 text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50"
             >
@@ -70,15 +70,12 @@ function AuthPage() {
 
             <button
               type="button"
-              disabled
-              title="Az Apple bejelentkezés konfigurációra vár — Services ID, Team ID, Key ID és Sign in with Apple kulcs szükséges."
-              className="w-full inline-flex items-center justify-center gap-3 rounded-md border border-border bg-muted/40 px-4 py-3 text-sm font-medium text-muted-foreground cursor-not-allowed"
+              onClick={() => onOAuth("apple")}
+              disabled={busy}
+              className="w-full inline-flex items-center justify-center gap-3 rounded-md border border-border bg-foreground px-4 py-3 text-sm font-medium text-background hover:bg-foreground/90 transition-colors disabled:opacity-50"
             >
               <AppleIcon />
-              Bejelentkezés Apple fiókkal
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground/80 ml-2">
-                hamarosan
-              </span>
+              {busy ? "Folyamatban…" : "Bejelentkezés Apple fiókkal"}
             </button>
 
             {error && (
