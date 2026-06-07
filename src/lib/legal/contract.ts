@@ -85,6 +85,16 @@ function sub(counter: { sub: number; no: number }, body: string, indent = false)
   return `${prefix}${counter.no}.${counter.sub}. ${body}`;
 }
 
+function hasRestrictedCapacity(p: NaturalPerson): boolean {
+  const status = determineCapacityStatus(p);
+  return (
+    status === "nagykoru_korlatozott" ||
+    status === "cselekvokeptelen_nagykoru" ||
+    status === "gondnokkal" ||
+    status === "ellenorzes_szukseges"
+  );
+}
+
 export function generateContractDraft(c: CaseFile): string {
   const eladok = c.parties.filter((p) => p.szerep === "elado");
   const vevok = c.parties.filter((p) => p.szerep === "vevo");
@@ -138,6 +148,16 @@ export function generateContractDraft(c: CaseFile): string {
 
   // 1. FELEK
   let s = startSection(ctx, "A SZERZŐDŐ FELEK");
+  const minors = c.parties.filter(
+    (p): p is NaturalPerson => p.kind === "termeszetes" && isMinor(p),
+  );
+  const restrictedParties = c.parties.filter(
+    (p): p is NaturalPerson => p.kind === "termeszetes" && hasRestrictedCapacity(p),
+  );
+  const capacityIssues = [...minors, ...restrictedParties].filter(
+    (party, index, all) => all.findIndex((p) => p.id === party.id) === index,
+  );
+
   out.push(sub(s, "Eladó(k):"));
   if (eladok.length === 0) out.push("  " + REVIEW("eladó adatai hiányoznak"));
   eladok.forEach((p, i) => out.push(`  ${i + 1}. ${describeParty(p)}`));
@@ -146,9 +166,21 @@ export function generateContractDraft(c: CaseFile): string {
   if (vevok.length === 0) out.push("  " + REVIEW("vevő adatai hiányoznak"));
   vevok.forEach((p, i) => out.push(`  ${i + 1}. ${describeParty(p)}`));
   out.push("");
-  out.push(
-    sub(s, "Felek kijelentik, hogy szerződéskötési képességük nem korlátozott, a jelen szerződés megkötésére teljes körű felhatalmazással és cselekvőképességgel rendelkeznek."),
-  );
+  if (capacityIssues.length > 0) {
+    out.push(
+      sub(
+        s,
+        "A Felek szerződéskötési képességét az eljáró ügyvéd külön ellenőrzi; kiskorú vagy korlátozott cselekvőképességű fél esetén a szükséges képviseleti, gondnoki és gyámhatósági feltételeket a jelen tervezet külön pontban kezeli.",
+      ),
+    );
+  } else {
+    out.push(
+      sub(
+        s,
+        "Felek kijelentik, hogy szerződéskötési képességük nem korlátozott, a jelen szerződés megkötésére teljes körű felhatalmazással és cselekvőképességgel rendelkeznek.",
+      ),
+    );
+  }
   out.push(
     sub(s, "A természetes személy Felek a 2017. évi LIII. törvény (Pmt.) szerinti ügyfél-átvilágításhoz szükséges adataikat az eljáró ügyvédnek a vonatkozó okmányok bemutatásával igazolták; az okmányokról az ügyvéd a Pmt. szerinti másolatot készít."),
   );
@@ -173,15 +205,20 @@ export function generateContractDraft(c: CaseFile): string {
   }
 
   // Törvényes képviselet
-  const minors = c.parties.filter(
-    (p): p is NaturalPerson => p.kind === "termeszetes" && isMinor(p),
-  );
-  if (minors.length > 0) {
+  if (capacityIssues.length > 0) {
     minors.forEach((m) => {
       out.push(
         sub(
           s,
           `Törvényes képviselet: a(z) ${m.nev || "[név]"} nevű, ${calculateAge(m.szuletesiDatum) ?? "[…]"} éves kiskorú fél nevében törvényes képviselője, ${m.kepviselo?.nev || "[képviselő neve]"} (${m.kepviselo?.minoseg || "minőség"}, lakcím: ${m.kepviselo?.lakcim || "[lakcím]"}) jár el. A Ptk. 2:15. § és a gyámhatóságról szóló jogszabályok alapján a kiskorút érintő vagyoni jogügylethez gyámhatósági jóváhagyás szükséges; a szerződés hatálybalépésének feltétele a jogerős gyámhatósági jóváhagyó határozat.`,
+        ),
+      );
+    });
+    restrictedParties.forEach((p) => {
+      out.push(
+        sub(
+          s,
+          `Törvényes képviselet: a(z) ${p.nev || "[név]"} nevű fél cselekvőképességi státusza (${CAPACITY_LABEL[determineCapacityStatus(p)]}) ügyvédi ellenőrzést igényel. A képviselő / gondnok adatai: ${p.kepviselo?.nev || "[képviselő / gondnok neve]"} (${p.kepviselo?.minoseg || "minőség"}, lakcím: ${p.kepviselo?.lakcim || "[lakcím]"}). Az eljáró ügyvéd külön vizsgálja, hogy a jogügylethez szükséges-e gyámhatósági jóváhagyás; szükség esetén a szerződés hatálya felfüggesztett hatállyal áll fenn a jóváhagyás jogerőre emelkedéséig.`,
         ),
       );
     });
@@ -546,12 +583,12 @@ export function generateContractDraft(c: CaseFile): string {
   out.push("");
 
   // 10. Speciális — kiskorú
-  if (minors.length > 0) {
+  if (capacityIssues.length > 0) {
     s = startSection(ctx, "KISKORÚ / KORLÁTOZOTT CSELEKVŐKÉPESSÉG SPECIÁLIS RENDELKEZÉSEI");
     out.push(
       sub(
         s,
-        "A kiskorú fél(ek) érintettsége miatt a szerződés hatálybalépésének feltétele az illetékes gyámhatóság jóváhagyó határozatának jogerőre emelkedése. A jóváhagyás megadásáig a Felek jogai és kötelezettségei felfüggesztett hatállyal állnak fenn. Amennyiben a gyámhatóság a jóváhagyást megtagadja, a szerződés érvénytelennek minősül és a Felek az addig teljesített szolgáltatásokat egymásnak visszaszolgáltatják.",
+        "A kiskorú vagy korlátozott cselekvőképességű fél érintettsége miatt az eljáró ügyvéd külön ellenőrzi a törvényes képviseletet, a gondnoki jogkört, az ügycsoportot és a gyámhatósági jóváhagyás szükségességét. Amennyiben jóváhagyás szükséges, a szerződés hatálybalépésének feltétele az illetékes gyámhatóság jóváhagyó határozatának jogerőre emelkedése; addig a Felek jogai és kötelezettségei felfüggesztett hatállyal állnak fenn.",
       ),
     );
     out.push("");

@@ -39,7 +39,14 @@ function code(s: string): string {
 }
 
 function isCriticalMissingData(missing: MissingField[]): boolean {
-  const criticalGroups = new Set(["felek", "ingatlan", "vetelar", "fizetes"]);
+  const criticalGroups = new Set([
+    "felek",
+    "ingatlan",
+    "vetelar",
+    "fizetes",
+    "birtokbaadas",
+    "specialis_jovahagyasok",
+  ]);
   return missing.some((m) => criticalGroups.has(m.group));
 }
 

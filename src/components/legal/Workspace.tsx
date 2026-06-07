@@ -1252,7 +1252,7 @@ function Step7({
           .txt
         </Button>
         <Button size="sm" variant="outline" onClick={() => void onExport("review-md")}>
-          Klauzula review report megnyitása
+          Klauzula review report export
         </Button>
         <Button size="sm" variant="default" onClick={onPrint}>
           📄 PDF letöltése (ügyvédi)

@@ -123,6 +123,17 @@ function minorBuyerCase(): CaseFile {
   return c;
 }
 
+function restrictedAdultBuyerCase(): CaseFile {
+  const c = cloneCase(demoCase());
+  c.ugyAzonosito = "VALIDACIO-GONDNOKOLT-VEVO";
+  const buyer = firstNatural(c, "vevo");
+  buyer.nev = "Kovács Júlia";
+  buyer.szuletesiDatum = "1980-02-12";
+  buyer.capacityOverride = "gondnokkal";
+  buyer.kepviselo = undefined;
+  return c;
+}
+
 function foreignBuyerCase(): CaseFile {
   const c = cloneCase(demoCase());
   c.ugyAzonosito = "DEMO-KULFOLDI-VEVO";
@@ -251,6 +262,22 @@ const scenarios: Scenario[] = [
     ],
   },
   {
+    id: "restricted-adult-buyer",
+    label: "Gondnokkal eljáró vevő képviselői adatok nélkül",
+    caseFile: restrictedAdultBuyerCase(),
+    required: [
+      ...hasDraftSafeguards,
+      contains("Törvényes képviselet"),
+      contains("képviselő / gondnok"),
+      contains("gyámhatósági jóváhagyás"),
+      contains("felfüggesztett hatállyal"),
+      riskContains("Cselekvőképességi"),
+    ],
+    notes: [
+      "Ez a validációs eset azt ellenőrzi, hogy a nem kiskorú, de korlátozott cselekvőképességű fél is aktív klauzulát és HIANYOS-TERVEZET report címet kapjon.",
+    ],
+  },
+  {
     id: "foreign-buyer",
     label: "Külföldi vevő engedélyezési figyelmeztetéssel",
     caseFile: foreignBuyerCase(),
@@ -321,7 +348,7 @@ for (const scenario of scenarios) {
     !report.markdown.includes("AI előpárosítás") && {
       label: `${scenario.id}: review report lawyer review wording missing`,
     },
-    scenario.id === "incomplete" &&
+    (scenario.id === "incomplete" || scenario.id === "restricted-adult-buyer") &&
       !report.title.includes("HIANYOS-TERVEZET") && {
         label: `${scenario.id}: critical missing data did not create HIANYOS-TERVEZET title`,
       },

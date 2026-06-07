@@ -318,6 +318,12 @@ export function detectMissingFields(c: CaseFile): MissingField[] {
           field: "Törvényes képviselő adatai",
           reszlet: label,
         });
+      if (isRestricted(p) && (!p.kepviselo || !p.kepviselo.nev))
+        m.push({
+          group: "specialis_jovahagyasok",
+          field: "Képviselő / gondnok adatai",
+          reszlet: label,
+        });
     } else {
       if (!p.cegnev) m.push({ group: "felek", field: "Cégnév", reszlet: label });
       if (!p.cegjegyzekszam)

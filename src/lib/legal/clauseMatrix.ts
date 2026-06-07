@@ -1,4 +1,5 @@
-import type { CaseFile } from "./types";
+import { determineCapacityStatus, isMinor } from "./logic";
+import type { CaseFile, NaturalPerson } from "./types";
 
 export type LawRefVerificationStatus = "ai_prelinked_pending_lawyer_review";
 
@@ -73,17 +74,35 @@ const lawRef = (
   verificationStatus: AI_PRELINKED_PENDING_REVIEW,
 });
 
-const hasNaturalMinor = (c: CaseFile) =>
-  c.parties.some((p) => {
-    if (p.kind !== "termeszetes" || !p.szuletesiDatum) return false;
-    const birth = new Date(p.szuletesiDatum);
-    if (Number.isNaN(birth.getTime())) return true;
-    const today = new Date();
-    let age = today.getFullYear() - birth.getFullYear();
-    const month = today.getMonth() - birth.getMonth();
-    if (month < 0 || (month === 0 && today.getDate() < birth.getDate())) age--;
-    return age < 18;
+const hasCapacityIssue = (c: CaseFile) =>
+  c.parties.some((p): p is NaturalPerson => {
+    if (p.kind !== "termeszetes") return false;
+    const status = determineCapacityStatus(p);
+    return (
+      isMinor(p) ||
+      status === "nagykoru_korlatozott" ||
+      status === "cselekvokeptelen_nagykoru" ||
+      status === "gondnokkal" ||
+      status === "ellenorzes_szukseges"
+    );
   });
+
+const isResidentialProperty = (c: CaseFile) => {
+  if (
+    c.transactionTypes.some((type) =>
+      ["lakas", "csaladi_haz", "tarsashazi_albetet"].includes(type),
+    )
+  ) {
+    return true;
+  }
+  const propertyText = `${c.property.ingatlanTipus} ${c.property.cim}`.toLowerCase();
+  return (
+    c.property.tarsashaziAlbetet ||
+    propertyText.includes("lakás") ||
+    propertyText.includes("ház") ||
+    propertyText.includes("családi")
+  );
+};
 
 const hasForeignBuyer = (c: CaseFile) =>
   c.parties.some(
@@ -316,7 +335,7 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
       "Kiskorú fél képviselete",
       NJT.ptk,
     ),
-    activeWhen: hasNaturalMinor,
+    activeWhen: hasCapacityIssue,
     auditTerms: ["Törvényes képviselet", "gyámhatósági jóváhagyás", "felfüggesztett hatállyal"],
     ugyvediKerdesek: [
       "A konkrét ügylethez ténylegesen szükséges-e gyámhatósági jóváhagyás?",
@@ -444,7 +463,7 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
       "Energetikai tanúsítvány",
       NJT.energetikai,
     ),
-    activeWhen: () => true,
+    activeWhen: isResidentialProperty,
     auditTerms: ["energetikai tanúsítvány"],
     ugyvediKerdesek: [
       "Mely ügytípusoknál kell kivételt képezni az energetikai tanúsítvány alól?",
