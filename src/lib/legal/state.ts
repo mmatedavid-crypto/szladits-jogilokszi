@@ -1,7 +1,27 @@
 import type { CaseFile, NaturalPerson, Company } from "./types";
 import { emptyModulok } from "./modulok";
+import { supabase } from "@/integrations/supabase/client";
 
+// =====================================================================
+// In-memory case store, hydrated from Lovable Cloud (per-user).
+// All public functions remain synchronous to preserve the call sites in
+// Workspace.tsx, CaseSwitcher.tsx, IntakeLinkPanel.tsx and adatbekero.
+// Writes update the in-memory store synchronously and queue a debounced
+// background upsert to Supabase. Hydration is async and must be awaited
+// from the authenticated Workspace on mount before rendering.
+// =====================================================================
 
+interface CaseStore {
+  activeId: string;
+  cases: Record<string, CaseFile>;
+}
+
+let store: CaseStore = { activeId: "", cases: {} };
+let currentUserId: string | null = null;
+let hydrated = false;
+
+const saveTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const SAVE_DEBOUNCE_MS = 800;
 
 export function emptyCase(): CaseFile {
   return {
@@ -95,11 +115,6 @@ export function emptyCase(): CaseFile {
   };
 }
 
-// --- Multi-case storage ---
-// Egy ügyvédnek több adásvétele lehet egyszerre folyamatban,
-// ezért a CaseFile-eket egy közös store-ban tartjuk.
-const STORE_KEY = "szladits.cases.v1";
-
 export interface CaseSummary {
   id: string;
   cimke: string;
@@ -108,17 +123,16 @@ export interface CaseSummary {
   letrehozva: string;
 }
 
-interface CaseStore {
-  activeId: string;
-  cases: Record<string, CaseFile>;
+function genId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `case_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
-function genCaseId(): string {
-  return `case_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
-}
-
-function normalizeCase(raw: Partial<CaseFile>): CaseFile {
+function normalizeCase(raw: Partial<CaseFile> | null | undefined): CaseFile {
   const base = emptyCase();
+  if (!raw) return base;
   return {
     ...base,
     ...raw,
@@ -131,57 +145,119 @@ function normalizeCase(raw: Partial<CaseFile>): CaseFile {
   } as CaseFile;
 }
 
-function readStore(): CaseStore {
-  if (typeof window === "undefined") {
-    return { activeId: "", cases: {} };
-  }
-  try {
-    const raw = window.localStorage.getItem(STORE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as CaseStore;
-      if (parsed && parsed.cases && typeof parsed.cases === "object") {
-        const cases: Record<string, CaseFile> = {};
-        for (const [id, c] of Object.entries(parsed.cases)) {
-          const nc = normalizeCase(c as Partial<CaseFile>);
-          nc.id = id;
-          cases[id] = nc;
-        }
-        const activeId =
-          parsed.activeId && cases[parsed.activeId]
-            ? parsed.activeId
-            : Object.keys(cases)[0] ?? "";
-        return { activeId, cases };
-      }
-    }
-    // Migráció: régi egy-ügy storage
-    const legacy = window.localStorage.getItem("szladits.casefile.v2");
-    if (legacy) {
-      const c = normalizeCase(JSON.parse(legacy) as Partial<CaseFile>);
-      const id = genCaseId();
-      c.id = id;
-      c.cimke = c.ugyAzonosito || "Korábbi ügy";
-      c.utoljaraMentve = new Date().toISOString();
-      const store: CaseStore = { activeId: id, cases: { [id]: c } };
-      writeStore(store);
-      return store;
-    }
-  } catch {
-    // ignore
-  }
-  return { activeId: "", cases: {} };
+/**
+ * Strip the top-level metadata (id, cimke, ugyAzonosito, letrehozva, utoljaraMentve)
+ * before writing CaseFile contents into the `data` jsonb column. We store those
+ * fields in their own columns so we can query and order without parsing JSON.
+ */
+function dataPayload(c: CaseFile): Record<string, unknown> {
+  const { id: _id, cimke: _cimke, ugyAzonosito: _ua, letrehozva: _lh, utoljaraMentve: _um, ...rest } = c;
+  void _id; void _cimke; void _ua; void _lh; void _um;
+  return rest;
 }
 
-function writeStore(store: CaseStore) {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORE_KEY, JSON.stringify(store));
-  } catch {
-    // ignore
+/** Hydrate the in-memory store from Lovable Cloud for the signed-in user.
+ *  Called by the authenticated Workspace on mount. Safe to call multiple times. */
+export async function hydrateCases(): Promise<void> {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user;
+  if (!user) {
+    store = { activeId: "", cases: {} };
+    currentUserId = null;
+    hydrated = true;
+    return;
   }
+  currentUserId = user.id;
+
+  const { data, error } = await supabase
+    .from("matters")
+    .select("*")
+    .is("deleted_at", null)
+    .order("utoljara_mentve", { ascending: false });
+
+  if (error) {
+    console.error("[state] hydrateCases failed:", error);
+    store = { activeId: "", cases: {} };
+    hydrated = true;
+    return;
+  }
+
+  const cases: Record<string, CaseFile> = {};
+  for (const row of data ?? []) {
+    const c = normalizeCase((row.data as Partial<CaseFile>) ?? {});
+    c.id = row.id;
+    c.cimke = row.cimke ?? "Névtelen ügy";
+    c.ugyAzonosito = row.ugy_azonosito ?? "";
+    c.letrehozva = row.letrehozva ?? row.created_at ?? "";
+    c.utoljaraMentve = row.utoljara_mentve ?? row.updated_at ?? "";
+    cases[row.id] = c;
+  }
+  const activeId = Object.keys(cases)[0] ?? "";
+  store = { activeId, cases };
+  hydrated = true;
 }
+
+export function isCasesHydrated(): boolean {
+  return hydrated;
+}
+
+export function resetCasesStore() {
+  for (const t of saveTimers.values()) clearTimeout(t);
+  saveTimers.clear();
+  store = { activeId: "", cases: {} };
+  currentUserId = null;
+  hydrated = false;
+}
+
+// ---------- background persistence ----------
+
+async function syncIntakeTokens(c: CaseFile) {
+  if (!c.id) return;
+  const rows: Array<{ token: string; matter_id: string; szerep: "elado" | "vevo" }> = [];
+  for (const szerep of ["elado", "vevo"] as const) {
+    const tok = c.intake?.[szerep]?.token;
+    if (tok) rows.push({ token: tok, matter_id: c.id, szerep });
+  }
+  if (rows.length === 0) return;
+  const { error } = await supabase
+    .from("intake_tokens")
+    .upsert(rows, { onConflict: "token" });
+  if (error) console.error("[state] intake token sync failed:", error);
+}
+
+async function persistMatter(c: CaseFile) {
+  if (!currentUserId || !c.id) return;
+  const payload = {
+    id: c.id,
+    user_id: currentUserId,
+    cimke: c.cimke ?? "Névtelen ügy",
+    ugy_azonosito: c.ugyAzonosito ?? "",
+    data: dataPayload(c),
+    letrehozva: c.letrehozva || new Date().toISOString(),
+    utoljara_mentve: new Date().toISOString(),
+  };
+  const { error } = await supabase.from("matters").upsert(payload, { onConflict: "id" });
+  if (error) {
+    console.error("[state] matter persist failed:", error);
+    return;
+  }
+  await syncIntakeTokens(c);
+}
+
+function queuePersist(c: CaseFile) {
+  if (!c.id) return;
+  const existing = saveTimers.get(c.id);
+  if (existing) clearTimeout(existing);
+  const t = setTimeout(() => {
+    saveTimers.delete(c.id!);
+    void persistMatter(c);
+  }, SAVE_DEBOUNCE_MS);
+  saveTimers.set(c.id, t);
+}
+
+// ---------- public API (synchronous, in-memory) ----------
 
 export function listCases(): CaseSummary[] {
-  const store = readStore();
   return Object.values(store.cases)
     .map<CaseSummary>((c) => ({
       id: c.id ?? "",
@@ -198,22 +274,20 @@ export function listCases(): CaseSummary[] {
 }
 
 export function getActiveCaseId(): string {
-  return readStore().activeId;
+  return store.activeId;
 }
 
 export function loadCase(): CaseFile {
-  const store = readStore();
   if (store.activeId && store.cases[store.activeId]) {
     return store.cases[store.activeId];
   }
-  // Üres állapot — még nincs egy ügy sem
   return emptyCase();
 }
 
-/** Megkeresi azt az ügyet, amelyhez egy adott intake token tartozik. */
+/** Synchronous local lookup — kept for legacy callers. The public intake
+ *  page must use the RPC-backed loader, not this. */
 export function findCaseByIntakeToken(token: string): CaseFile | null {
   if (!token) return null;
-  const store = readStore();
   for (const c of Object.values(store.cases)) {
     if (
       c.intake?.elado?.token === token ||
@@ -226,100 +300,91 @@ export function findCaseByIntakeToken(token: string): CaseFile | null {
 }
 
 export function saveCaseById(c: CaseFile) {
-  if (typeof window === "undefined" || !c.id) return;
-  const store = readStore();
-  store.cases[c.id] = {
+  if (!c.id) return;
+  const next: CaseFile = {
     ...c,
     utoljaraMentve: new Date().toISOString(),
   };
-  writeStore(store);
+  store.cases[c.id] = next;
+  queuePersist(next);
 }
 
-
 export function saveCase(c: CaseFile) {
-  if (typeof window === "undefined") return;
-  const store = readStore();
   let id = c.id || store.activeId;
-  if (!id) {
-    id = genCaseId();
-  }
+  if (!id) id = genId();
   const next: CaseFile = {
     ...c,
     id,
     cimke: c.cimke || c.ugyAzonosito || "Névtelen ügy",
+    letrehozva: c.letrehozva || new Date().toISOString(),
     utoljaraMentve: new Date().toISOString(),
   };
   store.cases[id] = next;
   store.activeId = id;
-  writeStore(store);
+  queuePersist(next);
 }
 
 export function switchCase(id: string): CaseFile | null {
-  const store = readStore();
   if (!store.cases[id]) return null;
   store.activeId = id;
-  writeStore(store);
   return store.cases[id];
 }
 
 export function createCase(label?: string): CaseFile {
-  const store = readStore();
   const c = emptyCase();
-  const id = genCaseId();
-  c.id = id;
+  c.id = genId();
   c.cimke = label?.trim() || "Új ügy";
   c.letrehozva = new Date().toISOString();
   c.utoljaraMentve = new Date().toISOString();
-  store.cases[id] = c;
-  store.activeId = id;
-  writeStore(store);
+  store.cases[c.id] = c;
+  store.activeId = c.id;
+  queuePersist(c);
   return c;
 }
 
 export function duplicateCase(id: string): CaseFile | null {
-  const store = readStore();
   const src = store.cases[id];
   if (!src) return null;
   const copy: CaseFile = JSON.parse(JSON.stringify(src));
-  const newIdv = genCaseId();
-  copy.id = newIdv;
+  copy.id = genId();
   copy.cimke = `${src.cimke || src.ugyAzonosito || "Ügy"} (másolat)`;
+  // Új intake tokeneket NEM másolunk, hogy ne lyukadjon ki a token→ügy mapping.
+  copy.intake = {
+    elado: { token: "", letrehozva: "", utoljaraMentve: "", beadva: false, beadvaIdo: "" },
+    vevo: { token: "", letrehozva: "", utoljaraMentve: "", beadva: false, beadvaIdo: "" },
+  };
   copy.letrehozva = new Date().toISOString();
   copy.utoljaraMentve = new Date().toISOString();
-  store.cases[newIdv] = copy;
-  store.activeId = newIdv;
-  writeStore(store);
+  store.cases[copy.id!] = copy;
+  store.activeId = copy.id!;
+  queuePersist(copy);
   return copy;
 }
 
 export function renameCase(id: string, label: string) {
-  const store = readStore();
   const c = store.cases[id];
   if (!c) return;
   c.cimke = label.trim() || c.ugyAzonosito || "Névtelen ügy";
   c.utoljaraMentve = new Date().toISOString();
-  writeStore(store);
+  queuePersist(c);
 }
 
 export function deleteCase(id: string): CaseFile | null {
-  const store = readStore();
   if (!store.cases[id]) return null;
   delete store.cases[id];
   if (store.activeId === id) {
     store.activeId = Object.keys(store.cases)[0] ?? "";
   }
-  writeStore(store);
+  // Hard delete on server (intake_tokens cascade).
+  void supabase.from("matters").delete().eq("id", id).then(({ error }) => {
+    if (error) console.error("[state] delete failed:", error);
+  });
   return store.activeId ? store.cases[store.activeId] : null;
 }
 
-/** Csak az aktív ügyet törli (a régi „Mentés törlése" gomb viselkedés). */
 export function clearCase() {
-  const store = readStore();
-  if (store.activeId) {
-    deleteCase(store.activeId);
-  }
+  if (store.activeId) deleteCase(store.activeId);
 }
-
 
 export function newId(prefix = "p"): string {
   return `${prefix}_${Math.random().toString(36).slice(2, 9)}`;
