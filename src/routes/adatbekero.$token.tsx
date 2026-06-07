@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { findCaseByIntakeToken, saveCaseById, emptyCase } from "@/lib/legal/state";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { emptyCase } from "@/lib/legal/state";
 import {
   findRoleByToken,
   findPartyForRole,
@@ -9,8 +9,10 @@ import {
 } from "@/lib/legal/intake";
 import type { CaseFile, NaturalPerson, PartyRole } from "@/lib/legal/types";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/adatbekero/$token")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Adatbekérő — ügyvédi adásvételi ügylet" },
@@ -20,25 +22,68 @@ export const Route = createFileRoute("/adatbekero/$token")({
   component: IntakePage,
 });
 
+function normalizeIntakeCase(raw: Partial<CaseFile> | null | undefined): CaseFile {
+  const base = emptyCase();
+  if (!raw) return base;
+  return {
+    ...base,
+    ...raw,
+    eljaroUgyved: { ...base.eljaroUgyved, ...(raw.eljaroUgyved ?? {}) },
+    modulok: { ...base.modulok, ...(raw.modulok ?? {}) },
+    intake: {
+      elado: { ...base.intake.elado, ...(raw.intake?.elado ?? {}) },
+      vevo: { ...base.intake.vevo, ...(raw.intake?.vevo ?? {}) },
+    },
+  } as CaseFile;
+}
+
+function dataPayload(c: CaseFile): Record<string, unknown> {
+  const { id: _id, cimke: _cimke, ugyAzonosito: _ua, letrehozva: _lh, utoljaraMentve: _um, ...rest } = c;
+  void _id; void _cimke; void _ua; void _lh; void _um;
+  return rest;
+}
+
 function IntakePage() {
   const { token } = Route.useParams();
   const [c, setC] = useState<CaseFile>(() => emptyCase());
   const [hydrated, setHydrated] = useState(false);
+  const [notFound, setNotFound] = useState(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const found = findCaseByIntakeToken(token);
-    if (found) setC(found);
-    setHydrated(true);
+    let cancelled = false;
+    void (async () => {
+      const { data, error } = await supabase.rpc("get_matter_for_intake", { _token: token });
+      if (cancelled) return;
+      if (error || !data) {
+        setNotFound(true);
+        setHydrated(true);
+        return;
+      }
+      setC(normalizeIntakeCase(data as Partial<CaseFile>));
+      setHydrated(true);
+    })();
+    return () => { cancelled = true; };
   }, [token]);
 
-  const role = useMemo(() => (hydrated ? findRoleByToken(c, token) : null), [c, token, hydrated]);
+  const role = useMemo(() => (hydrated && !notFound ? findRoleByToken(c, token) : null), [c, token, hydrated, notFound]);
+
+  const persist = (next: CaseFile) => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      void supabase.rpc("save_matter_for_intake", {
+        _token: token,
+        _data: dataPayload(next) as unknown as never,
+      });
+    }, 600);
+  };
 
   const update = (fn: (d: CaseFile) => void) => {
     setC((prev) => {
       const copy: CaseFile = JSON.parse(JSON.stringify(prev));
       fn(copy);
       if (role) copy.intake[role].utoljaraMentve = new Date().toISOString();
-      saveCaseById(copy);
+      persist(copy);
       return copy;
     });
   };
@@ -48,7 +93,7 @@ function IntakePage() {
     return <Shell><p className="text-sm text-muted-foreground">Betöltés…</p></Shell>;
   }
 
-  if (!role) {
+  if (notFound || !role) {
     return (
       <Shell>
         <h1 className="text-xl font-semibold text-foreground mb-2">
