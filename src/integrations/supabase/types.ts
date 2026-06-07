@@ -14,13 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      intake_tokens: {
+        Row: {
+          created_at: string
+          matter_id: string
+          szerep: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          matter_id: string
+          szerep: string
+          token: string
+        }
+        Update: {
+          created_at?: string
+          matter_id?: string
+          szerep?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intake_tokens_matter_id_fkey"
+            columns: ["matter_id"]
+            isOneToOne: false
+            referencedRelation: "matters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      matters: {
+        Row: {
+          cimke: string
+          created_at: string
+          data: Json
+          deleted_at: string | null
+          id: string
+          letrehozva: string
+          ugy_azonosito: string
+          updated_at: string
+          user_id: string
+          utoljara_mentve: string
+        }
+        Insert: {
+          cimke?: string
+          created_at?: string
+          data?: Json
+          deleted_at?: string | null
+          id?: string
+          letrehozva?: string
+          ugy_azonosito?: string
+          updated_at?: string
+          user_id: string
+          utoljara_mentve?: string
+        }
+        Update: {
+          cimke?: string
+          created_at?: string
+          data?: Json
+          deleted_at?: string | null
+          id?: string
+          letrehozva?: string
+          ugy_azonosito?: string
+          updated_at?: string
+          user_id?: string
+          utoljara_mentve?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_matter_for_intake: { Args: { _token: string }; Returns: Json }
+      save_matter_for_intake: {
+        Args: { _data: Json; _token: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
