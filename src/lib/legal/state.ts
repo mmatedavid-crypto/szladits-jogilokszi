@@ -232,7 +232,8 @@ async function persistMatter(c: CaseFile) {
     user_id: currentUserId,
     cimke: c.cimke ?? "Névtelen ügy",
     ugy_azonosito: c.ugyAzonosito ?? "",
-    data: dataPayload(c),
+    // Postgres jsonb column — cast to satisfy the generated row type.
+    data: dataPayload(c) as unknown as never,
     letrehozva: c.letrehozva || new Date().toISOString(),
     utoljara_mentve: new Date().toISOString(),
   };
