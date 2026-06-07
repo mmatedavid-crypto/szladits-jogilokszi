@@ -27,15 +27,15 @@ function AuthPage() {
     })();
   }, [navigate]);
 
-  const onGoogle = async () => {
+  const onOAuth = async (provider: "google" | "apple") => {
     setBusy(true);
     setError(null);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
+      const result = await lovable.auth.signInWithOAuth(provider, {
         redirect_uri: window.location.origin + "/app",
       });
       if (result.error) {
-        setError(result.error.message || "A Google bejelentkezés nem sikerült.");
+        setError(result.error.message || "A bejelentkezés nem sikerült.");
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Ismeretlen hiba.");
