@@ -174,7 +174,7 @@ export function UgyvedChecklist({ c, onClose }: Props) {
       },
       {
         id: "m-modulok",
-        label: "B400, Pmt. adatlap, illetékkalkuláció PDF letöltve",
+        label: "B400E/ONYA előkészítő, Pmt. adatlap, illetékkalkuláció PDF letöltve",
         hint: "A 'Speciális modulok' fülön — generáld le legalább egyszer.",
         priority: "kozepes",
         kind: "manual",
@@ -247,7 +247,7 @@ export function UgyvedChecklist({ c, onClose }: Props) {
 
   const kerdesek = [
     "Hiányzik-e a szerződéstervezetből olyan kötelező klauzula, amit te mindig beleteszel?",
-    "A Pmt. átvilágítási adatlap, B400, illetékkalkuláció mezői megfelelnek a gyakorlatnak?",
+    "A Pmt. átvilágítási adatlap, B400E/ONYA előkészítő és illetékkalkuláció mezői megfelelnek a gyakorlatnak?",
     "Hol illeszthető be a saját ügymenetedbe (ügyfélfelvétel? első konzultáció után? szerződéskötés előtt?)",
     "Milyen kockázatokat nem mernél rábízni egy ilyen eszközre?",
     "Érdemes lenne-e valódi TAKARNET / JÜB integrációt építeni, vagy maradjon segédeszköz?",

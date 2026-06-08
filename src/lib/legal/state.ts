@@ -133,11 +133,20 @@ function genId(): string {
 function normalizeCase(raw: Partial<CaseFile> | null | undefined): CaseFile {
   const base = emptyCase();
   if (!raw) return base;
+  const rawModulok = raw.modulok;
   return {
     ...base,
     ...raw,
     eljaroUgyved: { ...base.eljaroUgyved, ...(raw.eljaroUgyved ?? {}) },
-    modulok: { ...base.modulok, ...(raw.modulok ?? {}) },
+    modulok: {
+      ...base.modulok,
+      ...(rawModulok ?? {}),
+      pmt: { ...base.modulok.pmt, ...(rawModulok?.pmt ?? {}) },
+      b400: { ...base.modulok.b400, ...(rawModulok?.b400 ?? {}) },
+      kulfoldi: { ...base.modulok.kulfoldi, ...(rawModulok?.kulfoldi ?? {}) },
+      tarsashaz: { ...base.modulok.tarsashaz, ...(rawModulok?.tarsashaz ?? {}) },
+      ellenorzes: { ...base.modulok.ellenorzes, ...(rawModulok?.ellenorzes ?? {}) },
+    },
     intake: {
       elado: { ...base.intake.elado, ...(raw.intake?.elado ?? {}) },
       vevo: { ...base.intake.vevo, ...(raw.intake?.vevo ?? {}) },

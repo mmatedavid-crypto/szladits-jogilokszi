@@ -546,7 +546,7 @@ export function generateContractDraft(c: CaseFile): string {
   out.push(
     sub(
       s,
-      "A visszterhes vagyonátruházási illeték az illetékekről szóló 1990. évi XCIII. törvény (Itv.) szerint a Vevőt terheli. Az illeték kiszabását a Nemzeti Adó- és Vámhivatal (NAV) végzi a B400 jelű adatlap alapján. A B400 adatlap kitöltése és benyújtása az eljáró ügyvéd közreműködésével az adózás rendjéről szóló 2017. évi CL. törvény (Art.) szerint az ingatlan-nyilvántartási kérelem ingatlanügyi hatósághoz történő benyújtásával egyidejűleg történik (az ingatlanügyi hatóság továbbítja a NAV felé).",
+      "A visszterhes vagyonátruházási illeték az illetékekről szóló 1990. évi XCIII. törvény (Itv.) szerint a Vevőt terheli. Az illeték kiszabását a Nemzeti Adó- és Vámhivatal (NAV) végzi; a B400E adatlap / ONYA illetékbejelentés kitöltését és beküldését a Felek külön munkafolyamatban rendezik. Az elektronikus beküldést az arra jogosult vagyonszerző, eljáró ügyvéd vagy meghatalmazott képviselő saját KAÜ/Ügyfélkapu/DÁP azonosításával végzi. Jelen rendszer a B400E kitöltéséhez előkészítő adatösszefoglalót készít, elektronikus beküldést nem végez.",
     ),
   );
   out.push(

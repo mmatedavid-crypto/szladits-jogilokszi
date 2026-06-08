@@ -1,10 +1,12 @@
-// jsPDF alapú előkitöltött dokumentumok: B400 előkészítő adatlap és Pmt. átvilágítási adatlap.
-// FIGYELEM: ezek NEM hivatalos NAV/NAV-ÁNYK nyomtatványok, hanem az ügyvédi előkészítést támogató
-// előkitöltött adatlapok. A valódi beadás ÁNYK/ONYA ügyfélkapus azonosítást igényel.
+// jsPDF alapú előkitöltött dokumentumok: B400E/ONYA előkészítő és Pmt. átvilágítási adatlap.
+// FIGYELEM: ezek NEM hivatalos NAV-nyomtatványok és nem elektronikus beadványok, hanem az ügyvédi
+// előkészítést támogató adatösszefoglalók. A valódi beadás ONYA felületen,
+// KAÜ/Ügyfélkapu/DÁP azonosítást igényel.
 
 import jsPDF from "jspdf";
 import type { CaseFile } from "./types";
 import { szamolIlletek, bemenetCasebol, formatHuf } from "./illetek";
+import { B400E_BEKULDO_LABELS, B400E_STATUSZ_LABELS } from "./modulok";
 
 function header(doc: jsPDF, title: string, sub: string) {
   doc.setFont("helvetica", "bold");
@@ -70,13 +72,25 @@ export function generateB400Pdf(c: CaseFile): Blob {
   const doc = new jsPDF();
   header(
     doc,
-    "B400 - elokeszito adatlap (NEM hivatalos beadvany)",
-    "NAV ingatlanszerzes bejelentes elokitoltese - 1990. evi XCIII. tv. (Itv.) + Art. szerinti adatok",
+    "B400E / ONYA - elokeszito adatlap (NEM hivatalos beadvany)",
+    "NAV vagyonszerzesi illetekbejelentes elokeszitese - ONYA / B400E - 1990. evi XCIII. tv. (Itv.)",
   );
   let y = 38;
   y = section(doc, y, "Ugyirat azonosito");
   y = row(doc, y, "Ugyazonosito", c.ugyAzonosito);
   y = row(doc, y, "Generalas datuma", new Date().toLocaleDateString("hu-HU"));
+  y = row(doc, y, "B400E statusz", B400E_STATUSZ_LABELS[c.modulok.b400.statusz]);
+  y = row(doc, y, "ONYA bekuldo", B400E_BEKULDO_LABELS[c.modulok.b400.bekuldo]);
+  y = row(
+    doc,
+    y,
+    "Meghatalmazas",
+    c.modulok.b400.meghatalmazasRendelkezesreAll
+      ? "Rendelkezesre all"
+      : "Nincs rogzitve / ugyvedi ellenorzes szukseges",
+  );
+  y = row(doc, y, "Bekuldes datuma", c.modulok.b400.bekuldesDatuma);
+  y = row(doc, y, "NAV nyugtaazonosito", c.modulok.b400.navNyugtaAzonosito);
 
   y = section(doc, y + 2, "Szerzo (vevo) adatai");
   const vevo = c.parties.find((p) => p.szerep === "vevo");
@@ -128,7 +142,7 @@ export function generateB400Pdf(c: CaseFile): Blob {
   doc.setTextColor(150, 0, 0);
   doc.text(
     ascii(
-      "FIGYELEM: ez NEM a NAV B400 nyomtatvany hivatalos peldanya. A B400 nyomtatvanyt az ANYK/ONYA rendszerben kell kitolteni es ugyfelkapus azonositassal beadni.",
+      "FIGYELEM: ez NEM a NAV B400E adatlap hivatalos peldanya es nem elektronikus bekuldes. A B400E adatlapot az ONYA feluleten kell kitolteni es KAÜ/Ugyfelkapu/DAP azonositassal bekuldeni.",
     ),
     20,
     275,

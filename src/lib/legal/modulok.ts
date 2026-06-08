@@ -1,4 +1,4 @@
-// Kiegészítő modulok: B400, Pmt., JÜB, 251/2014, Társasház, Ellenőrzési checklist
+// Kiegészítő modulok: B400E/ONYA, Pmt., JÜB, 251/2014, Társasház, Ellenőrzési checklist
 // Belső tesztverzió — minden eredmény ügyvédi visszaigazolást igényel.
 
 export interface PmtAdatok {
@@ -17,7 +17,39 @@ export interface PmtAdatok {
   forrasMegjegyzes: string;
 }
 
+export type B400EStatusz =
+  | "adat_hianyos"
+  | "elokeszitendo"
+  | "onya_kitoltesre_kesz"
+  | "bekuldve"
+  | "nem_szukseges"
+  | "ugyvedi_ellenorzes_szukseges";
+
+export type B400EBekuldo = "" | "vevo" | "ugyved" | "meghatalmazott";
+
+export const B400E_STATUSZ_LABELS: Record<B400EStatusz, string> = {
+  adat_hianyos: "Adathiányos",
+  elokeszitendo: "Előkészítendő",
+  onya_kitoltesre_kesz: "ONYA kitöltésre kész",
+  bekuldve: "Beküldve",
+  nem_szukseges: "Nem szükséges",
+  ugyvedi_ellenorzes_szukseges: "Ügyvédi ellenőrzés szükséges",
+};
+
+export const B400E_BEKULDO_LABELS: Record<B400EBekuldo, string> = {
+  "": "Nincs kiválasztva",
+  vevo: "Vagyonszerző / vevő",
+  ugyved: "Eljáró ügyvéd",
+  meghatalmazott: "Meghatalmazott képviselő",
+};
+
 export interface B400Adatok {
+  statusz: B400EStatusz;
+  bekuldo: B400EBekuldo;
+  meghatalmazasRendelkezesreAll: boolean;
+  bekuldesDatuma: string;
+  navNyugtaAzonosito: string;
+  onyaUtmutatoEllenorizve: boolean;
   szerzodesDatuma: string;
   vetelar: string;
   szerzettHanyad: string;
@@ -98,6 +130,12 @@ export function emptyModulok(): ModulokState {
       forrasMegjegyzes: "",
     },
     b400: {
+      statusz: "elokeszitendo",
+      bekuldo: "",
+      meghatalmazasRendelkezesreAll: false,
+      bekuldesDatuma: "",
+      navNyugtaAzonosito: "",
+      onyaUtmutatoEllenorizve: false,
       szerzodesDatuma: "",
       vetelar: "",
       szerzettHanyad: "1/1",

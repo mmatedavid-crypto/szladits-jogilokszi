@@ -207,17 +207,21 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
   },
   {
     id: "tax-b400",
-    cim: "Illeték és B400",
-    leiras: "Visszterhes vagyonátruházási illeték, B400 adatlap és NAV felé továbbítási folyamat.",
-    triggerLeiras: "Minden visszterhes ingatlan-adásvételnél aktív.",
+    cim: "Illeték és B400E / ONYA bejelentés",
+    leiras:
+      "Visszterhes vagyonátruházási illeték, B400E adatlap / ONYA bejelentési workflow és NAV nyugta kezelése.",
+    triggerLeiras:
+      "Minden visszterhes ingatlan-adásvételnél aktív; B400E / ONYA kitöltési előkészítés.",
     reviewStatus: "ai_prelinked",
     riskLevel: "kozepes",
     lawRef: lawRef("itv", "18-21. § és kedvezmények", "Visszterhes vagyonátruházási illeték"),
     activeWhen: () => true,
-    auditTerms: ["Itv.", "B400", "visszterhes vagyonátruházási illeték"],
+    auditTerms: ["Itv.", "B400E", "ONYA", "visszterhes vagyonátruházási illeték"],
     ugyvediKerdesek: [
       "A vevő személyes helyzete alapján van-e illetékkedvezmény vagy mentesség?",
-      "A B400 tervezetben a kedvezmény jogcíme és összege helyesen jelenik-e meg?",
+      "Ki nyújtja be a B400E adatlapot az ONYA felületen?",
+      "Van-e kifejezett meghatalmazás, ha az ügyvéd vagy más képviselő jár el?",
+      "A kedvezmény/mentesség jogcíme és a NAV nyugtaazonosító rögzítve van-e?",
     ],
   },
   {
