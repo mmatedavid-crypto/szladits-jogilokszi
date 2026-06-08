@@ -6,6 +6,7 @@ import {
   type LawRef,
 } from "./clauseMatrix";
 import { generateContractDraft } from "./contract";
+import { getLegalSource, isKnownLegalSourceId } from "./legalSources";
 import { detectMissingFields, generateCaseSummary, generateRiskFlags } from "./logic";
 import type { CaseFile, MissingField, Party, RiskFlag } from "./types";
 
@@ -77,6 +78,7 @@ function hasTechnicalMatch(contract: string, clause: ClausePairing): boolean {
 function lawRefMetadataErrors(lawRef: LawRef): string[] {
   const errors: string[] = [];
   const fields: Array<keyof LawRef> = [
+    "sourceId",
     "act",
     "shortName",
     "section",
@@ -96,6 +98,18 @@ function lawRefMetadataErrors(lawRef: LawRef): string[] {
   if (!lawRef.sourceUrl.startsWith("https://njt.hu/")) {
     errors.push(`${lawRef.shortName}: sourceUrl`);
   }
+  if (!isKnownLegalSourceId(lawRef.sourceId)) {
+    errors.push(`${lawRef.shortName}: unknown sourceId`);
+  } else {
+    const legalSource = getLegalSource(lawRef.sourceId);
+    if (lawRef.act !== legalSource.act) errors.push(`${lawRef.shortName}: act != legalSource`);
+    if (lawRef.shortName !== legalSource.shortName)
+      errors.push(`${lawRef.shortName}: shortName != legalSource`);
+    if (lawRef.sourceUrl !== legalSource.sourceUrl)
+      errors.push(`${lawRef.shortName}: sourceUrl != legalSource`);
+    if (lawRef.checkedAt !== legalSource.checkedAt)
+      errors.push(`${lawRef.shortName}: checkedAt != legalSource`);
+  }
   if (lawRef.verificationStatus !== REVIEW_REQUIRED_STATUS) {
     errors.push(`${lawRef.shortName}: verificationStatus`);
   }
@@ -106,6 +120,7 @@ function lawRefBlock(lawRef: LawRef): string {
   return [
     "```ts",
     "lawRef: {",
+    `  sourceId: ${JSON.stringify(lawRef.sourceId)},`,
     `  act: ${JSON.stringify(lawRef.act)},`,
     `  shortName: ${JSON.stringify(lawRef.shortName)},`,
     `  section: ${JSON.stringify(lawRef.section)},`,
@@ -122,6 +137,7 @@ function lawRefBlock(lawRef: LawRef): string {
 
 function lawRefSummary(lawRef: LawRef): string[] {
   return [
+    `- Forrásazonosító: ${lawRef.sourceId}`,
     `- Rövid név: ${lawRef.shortName}`,
     `- Törvény/rendelet: ${lawRef.act}`,
     `- Szakasz / kapcsolódás: ${lawRef.section}`,

@@ -1,19 +1,8 @@
+import { createLawRef, type LawRef, type LawRefVerificationStatus } from "./legalSources";
 import { determineCapacityStatus, isMinor } from "./logic";
 import type { CaseFile, NaturalPerson } from "./types";
 
-export type LawRefVerificationStatus = "ai_prelinked_pending_lawyer_review";
-
-export interface LawRef {
-  act: string;
-  shortName: string;
-  section: string;
-  label: string;
-  source: "NJT";
-  sourceUrl: string;
-  checkedAt: string;
-  effectiveDateBasis: string;
-  verificationStatus: LawRefVerificationStatus;
-}
+export type { LawRef, LawRefVerificationStatus } from "./legalSources";
 
 export type ClauseReviewStatus =
   | "ai_prelinked"
@@ -37,42 +26,7 @@ export interface ClausePairing {
   ugyvediKerdesek: string[];
 }
 
-const CHECKED_AT = "2026-06-06";
-const LAWYER_REVIEW_REQUIRED = "ügyvédi validáció szükséges";
-const AI_PRELINKED_PENDING_REVIEW: LawRefVerificationStatus = "ai_prelinked_pending_lawyer_review";
-
-const NJT = {
-  ptk: "https://njt.hu/jogszabaly/2013-5-00-00.33",
-  inytv: "https://njt.hu/jogszabaly/1997-141-00-00.34",
-  uttv43: "https://njt.hu/jogszabaly/2017-78-00-00.19",
-  uttv: "https://njt.hu/jogszabaly/2017-78-00-00.28",
-  pmt: "https://njt.hu/jogszabaly/2017-53-00-00.1",
-  itv: "https://njt.hu/jogszabaly/1990-93-00-00",
-  foldforgalmi: "https://njt.hu/jogszabaly/2013-212-00-00.39",
-  biztonsagiOkmany: "https://njt.hu/jogszabaly/2014-47-20-22",
-  kulfoldiIngatlan: "https://njt.hu/jogszabaly/2014-251-20-22",
-  pp: "https://njt.hu/jogszabaly/2016-130-00-00.17",
-  energetikai: "https://njt.hu/jogszabaly/2008-176-20-22",
-  tarsashaz: "https://njt.hu/jogszabaly/2003-133-00-00",
-} as const;
-
-const lawRef = (
-  act: string,
-  shortName: string,
-  section: string,
-  label: string,
-  sourceUrl: string,
-): LawRef => ({
-  act,
-  shortName,
-  section,
-  label,
-  source: "NJT",
-  sourceUrl,
-  checkedAt: CHECKED_AT,
-  effectiveDateBasis: LAWYER_REVIEW_REQUIRED,
-  verificationStatus: AI_PRELINKED_PENDING_REVIEW,
-});
+const lawRef = createLawRef;
 
 const hasCapacityIssue = (c: CaseFile) =>
   c.parties.some((p): p is NaturalPerson => {
@@ -89,9 +43,7 @@ const hasCapacityIssue = (c: CaseFile) =>
 
 const isResidentialProperty = (c: CaseFile) => {
   if (
-    c.transactionTypes.some((type) =>
-      ["lakas", "csaladi_haz", "tarsashazi_albetet"].includes(type),
-    )
+    c.transactionTypes.some((type) => ["lakas", "csaladi_haz", "tarsashazi_albetet"].includes(type))
   ) {
     return true;
   }
@@ -130,22 +82,8 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     triggerLeiras: "Minden generált okiratnál kötelező.",
     reviewStatus: "ai_prelinked",
     riskLevel: "kritikus",
-    lawRef: lawRef(
-      "2017. évi LXXVIII. törvény",
-      "Üttv.",
-      "43. §",
-      "Ügyvédi ellenjegyzés",
-      NJT.uttv43,
-    ),
-    relatedLawRefs: [
-      lawRef(
-        "2016. évi CXXX. törvény",
-        "Pp.",
-        "325. §",
-        "Teljes bizonyító erejű magánokirat",
-        NJT.pp,
-      ),
-    ],
+    lawRef: lawRef("uttv", "43. §", "Ügyvédi ellenjegyzés"),
+    relatedLawRefs: [lawRef("pp", "325. §", "Teljes bizonyító erejű magánokirat")],
     activeWhen: () => true,
     auditTerms: ["TERVEZET", "ügyvédi ellenőrzés", "ÜGYVÉDI ELLENJEGYZÉS"],
     ugyvediKerdesek: [
@@ -161,21 +99,9 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     triggerLeiras: "Minden ügyben aktív; céges félnél fokozottan ellenőrzendő.",
     reviewStatus: "ai_prelinked",
     riskLevel: "magas",
-    lawRef: lawRef(
-      "2017. évi LIII. törvény",
-      "Pmt.",
-      "ügyfél-átvilágítási szabályok",
-      "Ügyfél-átvilágítás",
-      NJT.pmt,
-    ),
+    lawRef: lawRef("pmt", "ügyfél-átvilágítási szabályok", "Ügyfél-átvilágítás"),
     relatedLawRefs: [
-      lawRef(
-        "2017. évi LXXVIII. törvény",
-        "Üttv.",
-        "okiratszerkesztési és ellenjegyzési kapcsolódás",
-        "Ügyvédi közreműködés",
-        NJT.uttv,
-      ),
+      lawRef("uttv", "okiratszerkesztési és ellenjegyzési kapcsolódás", "Ügyvédi közreműködés"),
     ],
     activeWhen: () => true,
     auditTerms: ["Pmt.", "ügyfél-átvilágítás", "tényleges tulajdonosi nyilatkozat"],
@@ -192,13 +118,7 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     triggerLeiras: "Minden ingatlan-adásvételi ügyben aktív.",
     reviewStatus: "ai_prelinked",
     riskLevel: "kritikus",
-    lawRef: lawRef(
-      "1997. évi CXLI. törvény",
-      "Inytv.",
-      "okirati kellékek és bejegyzési alap",
-      "Ingatlan azonosítása",
-      NJT.inytv,
-    ),
+    lawRef: lawRef("inytv_1997", "okirati kellékek és bejegyzési alap", "Ingatlan azonosítása"),
     activeWhen: () => true,
     auditTerms: ["helyrajzi szám", "tulajdoni hányad", "Ingatlan"],
     ugyvediKerdesek: [
@@ -214,21 +134,9 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     triggerLeiras: "Akkor aktív, ha bármely teher mező jelölt vagy szövegesen kitöltött.",
     reviewStatus: "ai_prelinked",
     riskLevel: "kritikus",
-    lawRef: lawRef(
-      "1997. évi CXLI. törvény",
-      "Inytv.",
-      "jogok és tények bejegyzése/törlése",
-      "Terhek és tehermentesítés",
-      NJT.inytv,
-    ),
+    lawRef: lawRef("inytv_1997", "jogok és tények bejegyzése/törlése", "Terhek és tehermentesítés"),
     relatedLawRefs: [
-      lawRef(
-        "2013. évi V. törvény",
-        "Ptk.",
-        "jogszavatosság és szerződésszegési szabályok",
-        "Jogszavatosság",
-        NJT.ptk,
-      ),
+      lawRef("ptk", "jogszavatosság és szerződésszegési szabályok", "Jogszavatosság"),
     ],
     activeWhen: (c) => {
       const e = c.property.encumbrances;
@@ -255,7 +163,7 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     triggerLeiras: "payment.foglaloVan === true",
     reviewStatus: "ai_prelinked",
     riskLevel: "magas",
-    lawRef: lawRef("2013. évi V. törvény", "Ptk.", "6:185. §", "Foglaló", NJT.ptk),
+    lawRef: lawRef("ptk", "6:185. §", "Foglaló"),
     activeWhen: (c) => c.payment.foglaloVan,
     auditTerms: ["foglaló", "6:185. §"],
     ugyvediKerdesek: [
@@ -271,10 +179,8 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     triggerLeiras: "payment.bankhitelVan === true vagy hitellel érintett ügytípus.",
     reviewStatus: "ai_prelinked",
     riskLevel: "kritikus",
-    lawRef: lawRef("2021. évi C. törvény", "új Inytv.", "vevői jog", "Tulajdonjog-fenntartáshoz kapcsolódó vevői jog", NJT.inytv),
-    relatedLawRefs: [
-      lawRef("2017. évi LXXVIII. törvény", "Üttv.", "ügyvédi letét", "Ügyvédi letét", NJT.uttv),
-    ],
+    lawRef: lawRef("inytv_2021", "vevői jog", "Tulajdonjog-fenntartáshoz kapcsolódó vevői jog"),
+    relatedLawRefs: [lawRef("uttv", "ügyvédi letét", "Ügyvédi letét")],
     activeWhen: (c) => c.payment.bankhitelVan || c.transactionTypes.includes("hitellel_erintett"),
     auditTerms: ["banki hitel", "tulajdonjog-fenntartás", "vevői jog"],
     ugyvediKerdesek: [
@@ -290,8 +196,8 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     triggerLeiras: "Minden ügyben aktív; kötbérnél külön Ptk. ellenőrzés.",
     reviewStatus: "ai_prelinked",
     riskLevel: "kozepes",
-    lawRef: lawRef("2013. évi V. törvény", "Ptk.", "6:219. §", "Kárveszély átszállása", NJT.ptk),
-    relatedLawRefs: [lawRef("2013. évi V. törvény", "Ptk.", "6:186-6:189. §", "Kötbér", NJT.ptk)],
+    lawRef: lawRef("ptk", "6:219. §", "Kárveszély átszállása"),
+    relatedLawRefs: [lawRef("ptk", "6:186-6:189. §", "Kötbér")],
     activeWhen: () => true,
     auditTerms: ["birtokába", "kárveszély", "közüzemi"],
     ugyvediKerdesek: [
@@ -306,13 +212,7 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     triggerLeiras: "Minden visszterhes ingatlan-adásvételnél aktív.",
     reviewStatus: "ai_prelinked",
     riskLevel: "kozepes",
-    lawRef: lawRef(
-      "1990. évi XCIII. törvény",
-      "Itv.",
-      "18-21. § és kedvezmények",
-      "Visszterhes vagyonátruházási illeték",
-      NJT.itv,
-    ),
+    lawRef: lawRef("itv", "18-21. § és kedvezmények", "Visszterhes vagyonátruházási illeték"),
     activeWhen: () => true,
     auditTerms: ["Itv.", "B400", "visszterhes vagyonátruházási illeték"],
     ugyvediKerdesek: [
@@ -328,13 +228,7 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
       "Ha bármely természetes személy fél 18 év alatti vagy cselekvőképességi státusza korlátozott.",
     reviewStatus: "ai_prelinked",
     riskLevel: "kritikus",
-    lawRef: lawRef(
-      "2013. évi V. törvény",
-      "Ptk.",
-      "2:15. § és kapcsolódó képviseleti szabályok",
-      "Kiskorú fél képviselete",
-      NJT.ptk,
-    ),
+    lawRef: lawRef("ptk", "2:15. § és kapcsolódó képviseleti szabályok", "Kiskorú fél képviselete"),
     activeWhen: hasCapacityIssue,
     auditTerms: ["Törvényes képviselet", "gyámhatósági jóváhagyás", "felfüggesztett hatállyal"],
     ugyvediKerdesek: [
@@ -350,22 +244,8 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     triggerLeiras: "termofold, tanya vagy mezőgazdasági zártkert ügytípus.",
     reviewStatus: "ai_prelinked",
     riskLevel: "kritikus",
-    lawRef: lawRef(
-      "2013. évi CXXII. törvény",
-      "Földforgalmi tv.",
-      "elővásárlás, jóváhagyás, korlátok",
-      "Földforgalmi ügylet",
-      NJT.foldforgalmi,
-    ),
-    relatedLawRefs: [
-      lawRef(
-        "47/2014. (II. 26.) Korm. rendelet",
-        "47/2014. Korm. r.",
-        "biztonsági okmány",
-        "Biztonsági okmány",
-        NJT.biztonsagiOkmany,
-      ),
-    ],
+    lawRef: lawRef("foldforgalmi", "elővásárlás, jóváhagyás, korlátok", "Földforgalmi ügylet"),
+    relatedLawRefs: [lawRef("biztonsagi_okmany", "biztonsági okmány", "Biztonsági okmány")],
     activeWhen: isAgri,
     auditTerms: ["FÖLDFORGALMI", "kifüggesztés", "jóváhagy"],
     ugyvediKerdesek: [
@@ -381,13 +261,7 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     triggerLeiras: "Földforgalmi ügy és nyomtatási változat: biztonsági_okmany.",
     reviewStatus: "ai_prelinked",
     riskLevel: "kritikus",
-    lawRef: lawRef(
-      "47/2014. (II. 26.) Korm. rendelet",
-      "47/2014. Korm. r.",
-      "biztonsági okmány",
-      "Biztonsági okmány / zöld papír",
-      NJT.biztonsagiOkmany,
-    ),
+    lawRef: lawRef("biztonsagi_okmany", "biztonsági okmány", "Biztonsági okmány / zöld papír"),
     activeWhen: (c) =>
       isAgri(c) && c.special.foldforgalmi.nyomtatasiValtozat === "biztonsagi_okmany",
     auditTerms: ["BIZTONSÁGI OKMÁNY", "zöld papír"],
@@ -405,11 +279,9 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     reviewStatus: "ai_prelinked",
     riskLevel: "magas",
     lawRef: lawRef(
-      "251/2014. (X. 2.) Korm. rendelet",
-      "251/2014. Korm. r.",
+      "kulfoldi_ingatlan",
       "külföldiek ingatlanszerzése",
       "Külföldi vevő ingatlanszerzése",
-      NJT.kulfoldiIngatlan,
     ),
     activeWhen: hasForeignBuyer,
     auditTerms: ["KÜLFÖLDI SZERZŐ", "251/2014"],
@@ -427,21 +299,11 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     reviewStatus: "ai_prelinked",
     riskLevel: "magas",
     lawRef: lawRef(
-      "2017. évi LIII. törvény",
-      "Pmt.",
+      "pmt",
       "tényleges tulajdonos és ügyfél-átvilágítás",
       "Céges fél Pmt. átvilágítása",
-      NJT.pmt,
     ),
-    relatedLawRefs: [
-      lawRef(
-        "2013. évi V. törvény",
-        "Ptk.",
-        "jogi személy képviselete",
-        "Céges képviselet",
-        NJT.ptk,
-      ),
-    ],
+    relatedLawRefs: [lawRef("ptk", "jogi személy képviselete", "Céges képviselet")],
     activeWhen: hasCompanyParty,
     auditTerms: ["cégjegyzékszám", "képviselet módja", "tényleges tulajdonosi nyilatkozat"],
     ugyvediKerdesek: [
@@ -456,13 +318,7 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     triggerLeiras: "Lakóingatlan jellegű ügyleteknél aktív; hiánynál placeholder/figyelmeztetés.",
     reviewStatus: "ai_prelinked",
     riskLevel: "kozepes",
-    lawRef: lawRef(
-      "176/2008. (VI. 30.) Korm. rendelet",
-      "176/2008. Korm. r.",
-      "energetikai tanúsítvány",
-      "Energetikai tanúsítvány",
-      NJT.energetikai,
-    ),
+    lawRef: lawRef("energetikai", "energetikai tanúsítvány", "Energetikai tanúsítvány"),
     activeWhen: isResidentialProperty,
     auditTerms: ["energetikai tanúsítvány"],
     ugyvediKerdesek: [
@@ -478,13 +334,7 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     triggerLeiras: "Társasházi albetét vagy property.tarsashaziAlbetet.",
     reviewStatus: "ai_prelinked",
     riskLevel: "kozepes",
-    lawRef: lawRef(
-      "2003. évi CXXXIII. törvény",
-      "Társasházi tv.",
-      "alapító okirat, SZMSZ, társasházi működés",
-      "Társasházi albetét",
-      NJT.tarsashaz,
-    ),
+    lawRef: lawRef("tarsashaz", "alapító okirat, SZMSZ, társasházi működés", "Társasházi albetét"),
     activeWhen: (c) =>
       c.property.tarsashaziAlbetet || c.transactionTypes.includes("tarsashazi_albetet"),
     auditTerms: ["TÁRSASHÁZI", "alapító okirat", "SZMSZ"],

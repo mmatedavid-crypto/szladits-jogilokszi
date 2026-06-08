@@ -6,6 +6,7 @@ import {
   type LawRef,
 } from "../src/lib/legal/clauseMatrix";
 import { generateClauseReviewReport } from "../src/lib/legal/clauseReviewReport";
+import { getLegalSource, isKnownLegalSourceId } from "../src/lib/legal/legalSources";
 import { generateRiskFlags } from "../src/lib/legal/logic";
 import { demoCase, emptyCase, newId } from "../src/lib/legal/state";
 import type { CaseFile, NaturalPerson } from "../src/lib/legal/types";
@@ -175,6 +176,7 @@ function incompleteCase(): CaseFile {
 function validateLawRef(lawRef: LawRef): string[] {
   const missing: string[] = [];
   const requiredStringFields: Array<keyof LawRef> = [
+    "sourceId",
     "act",
     "shortName",
     "section",
@@ -192,6 +194,21 @@ function validateLawRef(lawRef: LawRef): string[] {
   if (lawRef.source !== "NJT") missing.push("source !== NJT");
   if (!lawRef.sourceUrl.startsWith("https://njt.hu/")) {
     missing.push("sourceUrl is not an NJT URL");
+  }
+  if (!isKnownLegalSourceId(lawRef.sourceId)) {
+    missing.push("sourceId is not in LEGAL_SOURCES");
+  } else {
+    const legalSource = getLegalSource(lawRef.sourceId);
+    if (lawRef.act !== legalSource.act) missing.push("act does not match LEGAL_SOURCES");
+    if (lawRef.shortName !== legalSource.shortName)
+      missing.push("shortName does not match LEGAL_SOURCES");
+    if (lawRef.sourceUrl !== legalSource.sourceUrl)
+      missing.push("sourceUrl does not match LEGAL_SOURCES");
+    if (lawRef.checkedAt !== legalSource.checkedAt)
+      missing.push("checkedAt does not match LEGAL_SOURCES");
+    if (legalSource.lawyerReviewStatus === "lawyer_validated") {
+      missing.push("legalSource is unexpectedly lawyer_validated");
+    }
   }
   if (lawRef.verificationStatus !== "ai_prelinked_pending_lawyer_review") {
     missing.push("verificationStatus");
@@ -406,4 +423,5 @@ if (failed > 0) {
 console.log("\nTechnical legal-matrix audit OK.");
 console.log("Clause review report generated successfully.");
 console.log("All active legal references include complete lawRef metadata.");
+console.log("All active legal references are linked to the central legalSources registry.");
 console.log("All AI-prelinked references remain pending lawyer review.");
