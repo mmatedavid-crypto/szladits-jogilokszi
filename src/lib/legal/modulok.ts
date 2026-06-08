@@ -50,6 +50,13 @@ export interface B400Adatok {
   bekuldesDatuma: string;
   navNyugtaAzonosito: string;
   onyaUtmutatoEllenorizve: boolean;
+  onyaMegnyitva: boolean;
+  b400eAdatlapKivalasztva: boolean;
+  vagyonszerzoAdatokAtvezetve: boolean;
+  ingatlanAdatokAtvezetve: boolean;
+  illetekAdatokAtvezetve: boolean;
+  ugyvediEllenorzesMegvolt: boolean;
+  nyugtaRogzitve: boolean;
   szerzodesDatuma: string;
   vetelar: string;
   szerzettHanyad: string;
@@ -136,6 +143,13 @@ export function emptyModulok(): ModulokState {
       bekuldesDatuma: "",
       navNyugtaAzonosito: "",
       onyaUtmutatoEllenorizve: false,
+      onyaMegnyitva: false,
+      b400eAdatlapKivalasztva: false,
+      vagyonszerzoAdatokAtvezetve: false,
+      ingatlanAdatokAtvezetve: false,
+      illetekAdatokAtvezetve: false,
+      ugyvediEllenorzesMegvolt: false,
+      nyugtaRogzitve: false,
       szerzodesDatuma: "",
       vetelar: "",
       szerzettHanyad: "1/1",

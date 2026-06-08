@@ -1,4 +1,5 @@
 import { generateContractDraft } from "../src/lib/legal/contract";
+import { generateB400EBeadasiCsomag } from "../src/lib/legal/b400eSubmission";
 import {
   formatReviewStatus,
   getActiveClausePairings,
@@ -337,6 +338,7 @@ let failed = 0;
 for (const scenario of scenarios) {
   const contract = generateContractDraft(scenario.caseFile);
   const report = generateClauseReviewReport(scenario.caseFile);
+  const b400ePackage = generateB400EBeadasiCsomag(scenario.caseFile);
   const risks = generateRiskFlags(scenario.caseFile);
   const pairings = getActiveClausePairings(scenario.caseFile);
   const ctx: AuditContext = { contract, risks };
@@ -379,7 +381,27 @@ for (const scenario of scenarios) {
         label: `${scenario.id}: clause auto-marked lawyer-approved -> ${pairing.id}`,
       })),
   ].filter(Boolean) as Array<{ label: string }>;
-  const failures = [...scenarioFailures, ...pairingFailures, ...lawRefFailures, ...reportFailures];
+  const b400eFailures = [
+    b400ePackage.mezok.length === 0 && {
+      label: `${scenario.id}: B400E / ONYA beadási csomag nem generált mezőket`,
+    },
+    !b400ePackage.osszefoglalo.includes("B400E") && {
+      label: `${scenario.id}: B400E / ONYA beadási csomag összefoglaló nem tartalmaz B400E hivatkozást`,
+    },
+    !b400ePackage.mezok.some((field) => field.csoport === "Vagyonszerző / vevő") && {
+      label: `${scenario.id}: B400E / ONYA beadási csomagból hiányzik a vagyonszerző csoport`,
+    },
+    !b400ePackage.mezok.some((field) => field.csoport === "Ingatlan") && {
+      label: `${scenario.id}: B400E / ONYA beadási csomagból hiányzik az ingatlan csoport`,
+    },
+  ].filter(Boolean) as Array<{ label: string }>;
+  const failures = [
+    ...scenarioFailures,
+    ...pairingFailures,
+    ...lawRefFailures,
+    ...reportFailures,
+    ...b400eFailures,
+  ];
   const placeholderCount = (contract.match(/\[[^\]]+\]|_{6,}/g) ?? []).length;
 
   console.log(`\n=== ${scenario.label} (${scenario.id}) ===`);
@@ -388,6 +410,8 @@ for (const scenario of scenarios) {
   console.log(`Aktív jogi párosítások: ${pairings.length}`);
   console.log(`Review report cím: ${report.title}`);
   console.log(`Review report hossz: ${report.markdown.length.toLocaleString("hu-HU")} karakter`);
+  console.log(`B400E / ONYA mezők: ${b400ePackage.mezok.length}`);
+  console.log(`B400E / ONYA hiányzó kötelező adatok: ${b400ePackage.hianyzoMezok.length}`);
   console.log(`Placeholder / üres aláírási mező jelölések: ${placeholderCount}`);
   for (const pairing of pairings) {
     const statutes = getAllLawRefs(pairing)
@@ -423,6 +447,7 @@ if (failed > 0) {
 
 console.log("\nTechnical legal-matrix audit OK.");
 console.log("Clause review report generated successfully.");
+console.log("B400E / ONYA submission package generated successfully.");
 console.log("All active legal references include complete lawRef metadata.");
 console.log("All active legal references are linked to the central legalSources registry.");
 console.log("All AI-prelinked references remain pending lawyer review.");

@@ -7,6 +7,7 @@ import {
   type B400EBekuldo,
   type B400EStatusz,
 } from "@/lib/legal/modulok";
+import { generateB400EBeadasiCsomag } from "@/lib/legal/b400eSubmission";
 import { szamolIlletek, bemenetCasebol, formatHuf } from "@/lib/legal/illetek";
 import { generateB400Pdf, generatePmtPdf, generateIlletekPdf, downloadBlob } from "@/lib/legal/pdf";
 import { JOGSZABALYOK } from "@/lib/legal/jogszabaly";
@@ -54,8 +55,18 @@ function Box({
 
 export function Modulok({ c, update }: Props) {
   const [jubInput, setJubInput] = useState({ nev: "", okmanySzam: "", okmanyTipus: "szig" });
+  const [copiedField, setCopiedField] = useState<string>("");
 
   const ill = szamolIlletek(bemenetCasebol(c));
+  const b400eCsomag = generateB400EBeadasiCsomag(c);
+  const b400eCsoportok = b400eCsomag.mezok.reduce<Record<string, typeof b400eCsomag.mezok>>(
+    (acc, field) => {
+      acc[field.csoport] = acc[field.csoport] ?? [];
+      acc[field.csoport].push(field);
+      return acc;
+    },
+    {},
+  );
   const customIll = szamolIlletek({
     ...bemenetCasebol(c),
     elsoLakas: false,
@@ -66,6 +77,13 @@ export function Modulok({ c, update }: Props) {
     testverKozott: false,
     egyenesAgiRokon: false,
   });
+
+  async function copyText(id: string, text: string) {
+    if (!navigator.clipboard) return;
+    await navigator.clipboard.writeText(text);
+    setCopiedField(id);
+    window.setTimeout(() => setCopiedField(""), 1400);
+  }
 
   return (
     <div>
@@ -350,6 +368,119 @@ export function Modulok({ c, update }: Props) {
           onChange={(v) => update((d) => void (d.modulok.b400.onyaUtmutatoEllenorizve = v))}
           label="ONYA B400E kitöltési útvonal ellenőrizve az adott ügylethez"
         />
+        <div className="rounded-md border border-border bg-secondary/40 p-3 space-y-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h4 className="text-sm font-semibold">ONYA beadási csomag</h4>
+              <p className="text-xs text-muted-foreground">
+                Mezőnként másolható adatösszefoglaló az ONYA B400E kitöltéséhez. Nem hivatalos
+                beadvány, és nem végez elektronikus beküldést.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild size="sm" variant="outline">
+                <a href="https://onya.nav.gov.hu/" target="_blank" rel="noreferrer">
+                  ONYA megnyitása
+                </a>
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => copyText("b400e-osszefoglalo", b400eCsomag.osszefoglalo)}
+              >
+                {copiedField === "b400e-osszefoglalo" ? "Másolva" : "Összes adat másolása"}
+              </Button>
+            </div>
+          </div>
+
+          {b400eCsomag.hianyzoMezok.length > 0 && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-xs">
+              <strong>Hiányzó kötelező adatok:</strong>{" "}
+              {b400eCsomag.hianyzoMezok.map((field) => field.cimke).join(", ")}
+            </div>
+          )}
+
+          <div className="grid sm:grid-cols-2 gap-2">
+            <Check
+              checked={c.modulok.b400.onyaMegnyitva}
+              onChange={(v) => update((d) => void (d.modulok.b400.onyaMegnyitva = v))}
+              label="ONYA megnyitva"
+            />
+            <Check
+              checked={c.modulok.b400.b400eAdatlapKivalasztva}
+              onChange={(v) => update((d) => void (d.modulok.b400.b400eAdatlapKivalasztva = v))}
+              label="B400E adatlap kiválasztva"
+            />
+            <Check
+              checked={c.modulok.b400.vagyonszerzoAdatokAtvezetve}
+              onChange={(v) => update((d) => void (d.modulok.b400.vagyonszerzoAdatokAtvezetve = v))}
+              label="Vagyonszerző adatai átemelve"
+            />
+            <Check
+              checked={c.modulok.b400.ingatlanAdatokAtvezetve}
+              onChange={(v) => update((d) => void (d.modulok.b400.ingatlanAdatokAtvezetve = v))}
+              label="Ingatlanadatok átemelve"
+            />
+            <Check
+              checked={c.modulok.b400.illetekAdatokAtvezetve}
+              onChange={(v) => update((d) => void (d.modulok.b400.illetekAdatokAtvezetve = v))}
+              label="Illetékadatok és kedvezmények átemelve"
+            />
+            <Check
+              checked={c.modulok.b400.ugyvediEllenorzesMegvolt}
+              onChange={(v) => update((d) => void (d.modulok.b400.ugyvediEllenorzesMegvolt = v))}
+              label="Ügyvédi ellenőrzés megtörtént beküldés előtt"
+            />
+            <Check
+              checked={c.modulok.b400.nyugtaRogzitve}
+              onChange={(v) => update((d) => void (d.modulok.b400.nyugtaRogzitve = v))}
+              label="NAV nyugtaazonosító rögzítve"
+            />
+          </div>
+
+          <div className="space-y-3">
+            {Object.entries(b400eCsoportok).map(([group, fields]) => (
+              <div key={group} className="rounded-md border border-border bg-card p-3">
+                <h5 className="text-xs font-semibold text-foreground mb-2">{group}</h5>
+                <div className="space-y-2">
+                  {fields.map((field) => (
+                    <div
+                      key={field.id}
+                      className="grid gap-2 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.2fr)_auto] sm:items-center"
+                    >
+                      <div className="text-xs text-muted-foreground">
+                        {field.cimke}
+                        {field.kotelezo && <span className="text-destructive"> *</span>}
+                      </div>
+                      <div
+                        className={`rounded-md border px-2 py-1.5 text-xs ${
+                          field.hianyos
+                            ? "border-destructive/50 bg-destructive/5 text-destructive"
+                            : "border-border bg-secondary/40 text-foreground"
+                        }`}
+                      >
+                        {field.ertek || "[hiányzik]"}
+                        {field.megjegyzes && (
+                          <div className="mt-1 text-[10px] text-muted-foreground">
+                            {field.megjegyzes}
+                          </div>
+                        )}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={!field.ertek}
+                        onClick={() => copyText(field.id, field.ertek)}
+                      >
+                        {copiedField === field.id ? "Másolva" : "Másolás"}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
         <textarea
           className={`${inputCls} min-h-[50px]`}
           placeholder="Megjegyzés"
