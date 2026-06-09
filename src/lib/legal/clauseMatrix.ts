@@ -118,12 +118,38 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     triggerLeiras: "Minden ingatlan-adásvételi ügyben aktív.",
     reviewStatus: "ai_prelinked",
     riskLevel: "kritikus",
-    lawRef: lawRef("inytv_1997", "okirati kellékek és bejegyzési alap", "Ingatlan azonosítása"),
+    lawRef: lawRef("inytv_2021", "okirati kellékek és bejegyzési alap", "Ingatlan azonosítása"),
+    relatedLawRefs: [
+      lawRef(
+        "inytv_vhr_2023",
+        "ingatlan adatai és eljárási részletszabályok",
+        "Inytv. végrehajtási szabályok",
+      ),
+    ],
     activeWhen: () => true,
     auditTerms: ["helyrajzi szám", "tulajdoni hányad", "Ingatlan"],
     ugyvediKerdesek: [
       "A tulajdoni lap I-II-III. része alapján minden lényeges adat átjött-e?",
       "Társasházi albetétnél kell-e külön közös tulajdoni hányad / garázs / tároló klauzula?",
+    ],
+  },
+  {
+    id: "inytv-new-framework",
+    cim: "Új Inytv. és végrehajtási rendelet kötelező alkalmazása",
+    leiras:
+      "Minden ingatlan-adásvételi tervezetnél az új Inytv. (2021. évi C. törvény) és a 179/2023. (V. 15.) Korm. rendelet szerinti ingatlan-nyilvántartási bejegyzési keretet kell alkalmazni.",
+    triggerLeiras: "Minden szerződésgenerálásnál kötelező.",
+    reviewStatus: "ai_prelinked",
+    riskLevel: "kritikus",
+    lawRef: lawRef("inytv_2021", "bejegyzési eljárási keret", "Új Inytv. kötelező alkalmazása"),
+    relatedLawRefs: [
+      lawRef("inytv_vhr_2023", "végrehajtási részletszabályok", "Inytv. végrehajtási rendelet"),
+    ],
+    activeWhen: () => true,
+    auditTerms: ["2021. évi C. törvény", "179/2023. (V. 15.) Korm. r.", "E-ING"],
+    ugyvediKerdesek: [
+      "A konkrét ügylet bejegyzési jogcíme, ranghelye és mellékletei megfelelnek-e az új Inytv. és vhr. szerinti eljárási rendnek?",
+      "A tulajdonjog-fenntartáshoz kapcsolódó vevői jog, bejegyzési engedély és E-ING beadási workflow összhangban van-e az ügyvédi gyakorlattal?",
     ],
   },
   {
@@ -134,8 +160,9 @@ export const CLAUSE_PAIRINGS: ClausePairing[] = [
     triggerLeiras: "Akkor aktív, ha bármely teher mező jelölt vagy szövegesen kitöltött.",
     reviewStatus: "ai_prelinked",
     riskLevel: "kritikus",
-    lawRef: lawRef("inytv_1997", "jogok és tények bejegyzése/törlése", "Terhek és tehermentesítés"),
+    lawRef: lawRef("inytv_2021", "jogok és tények bejegyzése/törlése", "Terhek és tehermentesítés"),
     relatedLawRefs: [
+      lawRef("inytv_vhr_2023", "jogok és tények végrehajtási szabályai", "Inytv. vhr."),
       lawRef("ptk", "jogszavatosság és szerződésszegési szabályok", "Jogszavatosság"),
     ],
     activeWhen: (c) => {

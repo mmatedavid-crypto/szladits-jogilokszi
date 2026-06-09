@@ -7,6 +7,7 @@ import {
   isMinor,
   generateAttachmentList,
 } from "./logic";
+import { generateMandatoryInytvClauses } from "./inytvRules";
 
 function fmt(n: string, ccy: string) {
   if (!n) return "[…]";
@@ -28,7 +29,8 @@ function stripTrailingPunct(s: string): string {
 
 const REVIEW = (msg: string) => `[HIÁNYZÓ ADAT / ÜGYVÉDI DÖNTÉS SZÜKSÉGES: ${msg}]`;
 // A részletes jogi indoklást a clauseReviewReport tartalmazza; a szerződés szövegében csak rövid marker jelenik meg.
-const LEGAL_REVIEW = (_msg: string) => `[ÜGYVÉDI ELLENŐRZÉS SZÜKSÉGES — részletek a klauzula review reportban]`;
+const LEGAL_REVIEW = (_msg: string) =>
+  `[ÜGYVÉDI ELLENŐRZÉS SZÜKSÉGES — részletek a klauzula review reportban]`;
 
 function describeParty(p: Party): string {
   if (p.kind === "termeszetes") {
@@ -62,7 +64,9 @@ function afaSzoveg(c: CaseFile): string {
     case "forditott":
       return "Az ügylet az Áfa tv. 142. § szerinti fordított adózás hatálya alá tartozik; az adófizetésre a Vevő kötelezett.";
     default:
-      return REVIEW("ÁFA-kezelés (áfa-körön kívüli / áfa-mentes / 27% / 5% új építésű / fordított adózás) — adótanácsadói és ügyvédi döntés szükséges a Vételárkikötés véglegesítése előtt");
+      return REVIEW(
+        "ÁFA-kezelés (áfa-körön kívüli / áfa-mentes / 27% / 5% új építésű / fordított adózás) — adótanácsadói és ügyvédi döntés szükséges a Vételárkikötés véglegesítése előtt",
+      );
   }
 }
 
@@ -106,8 +110,7 @@ export function generateContractDraft(c: CaseFile): string {
   const agri =
     c.transactionTypes.includes("termofold") ||
     c.transactionTypes.includes("tanya") ||
-    (c.transactionTypes.includes("zartkert") &&
-      c.special.zartkertStatus === "mezogazdasagi");
+    (c.transactionTypes.includes("zartkert") && c.special.zartkertStatus === "mezogazdasagi");
   const biztOkm = agri && ff.nyomtatasiValtozat === "biztonsagi_okmany";
 
   out.push(DRAFT_BANNER);
@@ -117,7 +120,9 @@ export function generateContractDraft(c: CaseFile): string {
     out.push(
       "  A 2013. évi CXXII. tv. (Földforgalmi tv.) és a kapcsolódó jogszabályok szerint mező- és erdőgazdasági föld adásvételi szerződését biztonsági okmányon („zöld papír”) kell kiállítani. A jelen tervezetet az ügyvéd a biztonsági okmány lapjaira nyomtatja, a sorszámot az ügyiratban dokumentálja.",
     );
-    out.push(`  Biztonsági okmány sorszáma: ${ff.biztonsagiOkmanySorszam || "____________________"}`);
+    out.push(
+      `  Biztonsági okmány sorszáma: ${ff.biztonsagiOkmanySorszam || "____________________"}`,
+    );
     out.push(`  Kiállító / forgalmazó: ${ff.biztonsagiOkmanyKiallito || "____________________"}`);
     out.push("");
   } else if (agri) {
@@ -182,7 +187,10 @@ export function generateContractDraft(c: CaseFile): string {
     );
   }
   out.push(
-    sub(s, "A természetes személy Felek a 2017. évi LIII. törvény (Pmt.) szerinti ügyfél-átvilágításhoz szükséges adataikat az eljáró ügyvédnek a vonatkozó okmányok bemutatásával igazolták; az okmányokról az ügyvéd a Pmt. szerinti másolatot készít."),
+    sub(
+      s,
+      "A természetes személy Felek a 2017. évi LIII. törvény (Pmt.) szerinti ügyfél-átvilágításhoz szükséges adataikat az eljáró ügyvédnek a vonatkozó okmányok bemutatásával igazolták; az okmányokról az ügyvéd a Pmt. szerinti másolatot készít.",
+    ),
   );
 
   // Cégek képviseleti nyilatkozata — ha van cég-fél
@@ -194,7 +202,10 @@ export function generateContractDraft(c: CaseFile): string {
       let kepvSzov: string;
       if (mode.includes("önál") || mode.includes("onal")) kepvSzov = "önállóan";
       else if (mode.includes("együt") || mode.includes("egyut")) kepvSzov = "együttesen";
-      else kepvSzov = REVIEW("cég képviseleti módja (önálló vagy együttes) — cégkivonat alapján rögzítendő");
+      else
+        kepvSzov = REVIEW(
+          "cég képviseleti módja (önálló vagy együttes) — cégkivonat alapján rögzítendő",
+        );
       out.push(
         sub(
           s,
@@ -243,7 +254,10 @@ export function generateContractDraft(c: CaseFile): string {
   out.push(`  – eladói tulajdoni hányad: ${c.property.tulajdoniHanyad || "1/1"}.`);
   if (c.property.tarsashaziAlbetet)
     out.push(
-      sub(s, "Az Ingatlan társasházi külön tulajdonú albetét; a közös tulajdoni hányadra a társasházi alapító okirat irányadó."),
+      sub(
+        s,
+        "Az Ingatlan társasházi külön tulajdonú albetét; a közös tulajdoni hányadra a társasházi alapító okirat irányadó.",
+      ),
     );
   if (c.property.teremgarazsTarolo) {
     out.push(
@@ -351,7 +365,9 @@ export function generateContractDraft(c: CaseFile): string {
       ),
     );
   if (c.payment.onero)
-    out.push(sub(s, `Önerő: ${fmt(c.payment.onero, ccy)}, melyet a Vevő saját forrásból teljesít.`));
+    out.push(
+      sub(s, `Önerő: ${fmt(c.payment.onero, ccy)}, melyet a Vevő saját forrásból teljesít.`),
+    );
   if (c.payment.bankhitelVan) {
     if (!c.payment.bankNeve || !c.payment.hitelOsszeg || !c.payment.hitelFolyositasHatarido) {
       out.push(
@@ -391,7 +407,9 @@ export function generateContractDraft(c: CaseFile): string {
     if (c.payment.fizetesiUtemezes) {
       out.push(sub(s, `Részletfizetési ütemezés: ${c.payment.fizetesiUtemezes}`));
     } else {
-      out.push(sub(s, REVIEW("részletfizetési ütemezés szövege (esedékességi időpontok, összegek)")));
+      out.push(
+        sub(s, REVIEW("részletfizetési ütemezés szövege (esedékességi időpontok, összegek)")),
+      );
     }
   }
   if (c.payment.meglevoTeherKivaltas)
@@ -406,17 +424,21 @@ export function generateContractDraft(c: CaseFile): string {
     );
   if (c.payment.utalasiSzamlaszam)
     out.push(
-      sub(s, `A Vevő a Vételár átutalással teljesítendő részét az alábbi számlaszámra fizeti meg: ${c.payment.utalasiSzamlaszam}.`),
+      sub(
+        s,
+        `A Vevő a Vételár átutalással teljesítendő részét az alábbi számlaszámra fizeti meg: ${c.payment.utalasiSzamlaszam}.`,
+      ),
     );
-  else
-    out.push(sub(s, REVIEW("Eladó utalási számlaszáma")));
+  else out.push(sub(s, REVIEW("Eladó utalási számlaszáma")));
   out.push(
     sub(
       s,
       "A pénzügyi teljesítés akkor minősül megtörténtnek, amikor a Vételár megfelelő része az Eladó (illetve a hitelező / letéteményes) számláján maradéktalanul jóváírásra került.",
     ),
   );
-  out.push(sub(s, "Késedelem esetén a Polgári Törvénykönyv szerinti törvényes késedelmi kamat jár."));
+  out.push(
+    sub(s, "Késedelem esetén a Polgári Törvénykönyv szerinti törvényes késedelmi kamat jár."),
+  );
   out.push("");
 
   // 5. BIRTOKBAADÁS
@@ -425,7 +447,9 @@ export function generateContractDraft(c: CaseFile): string {
     sub(
       s,
       `Az Ingatlant az Eladó a teljes Vételár hiánytalan megfizetésével egyidejűleg, ${
-        c.possession.datum ? "legkésőbb " + c.possession.datum + " napján" : REVIEW("birtokbaadás napja")
+        c.possession.datum
+          ? "legkésőbb " + c.possession.datum + " napján"
+          : REVIEW("birtokbaadás napja")
       } adja a Vevő birtokába.`,
     ),
   );
@@ -490,12 +514,18 @@ export function generateContractDraft(c: CaseFile): string {
   out.push(
     sub(
       s,
-      "Felek megállapodnak abban, hogy az Eladó a Vevő tulajdonjog-bejegyzéséhez szükséges, feltétel nélküli és visszavonhatatlan bejegyzési engedélyt a teljes Vételár hiánytalan megfizetésével egyidejűleg, külön okiratban adja ki, melyet az eljáró ügyvéd ügyvédi letétben kezel az Üttv. szerint. Felek tudomásul veszik, hogy az ingatlan-nyilvántartási bejegyzésre az új Inytv. (2021. évi C. tv. — hatályos 2026.03.01-től) és végrehajtási rendelete (179/2023. (V. 15.) Korm. r.) az irányadó. " +
+      "Felek megállapodnak abban, hogy az Eladó a Vevő tulajdonjog-bejegyzéséhez szükséges, feltétel nélküli és visszavonhatatlan bejegyzési engedélyt a teljes Vételár hiánytalan megfizetésével egyidejűleg, külön okiratban adja ki, melyet az eljáró ügyvéd ügyvédi letétben kezel az Üttv. szerint. Felek tudomásul veszik, hogy az ingatlan-nyilvántartási bejegyzésre és az E-ING eljárási munkafolyamatra az új Inytv. (2021. évi C. törvény — hatályos 2026.03.01-től) és végrehajtási rendelete (179/2023. (V. 15.) Korm. r.) az irányadó. " +
         LEGAL_REVIEW(
           "a bejegyzési engedély pontos formai követelményei az új Inytv. és vhr. alapján — szakaszhivatkozás ügyvédi véglegesítése kötelező",
         ),
     ),
   );
+  for (const clause of generateMandatoryInytvClauses(
+    c,
+    LEGAL_REVIEW("új Inytv. és 179/2023. Korm. r. kötelező alkalmazási kontroll"),
+  )) {
+    out.push(sub(s, clause));
+  }
   if (c.payment.bankhitelVan) {
     out.push(
       sub(
@@ -578,7 +608,10 @@ export function generateContractDraft(c: CaseFile): string {
     ),
   );
   out.push(
-    sub(s, "Felek nyilatkoznak, hogy az ügyvéd adatkezelési tájékoztatóját megismerték és elfogadták."),
+    sub(
+      s,
+      "Felek nyilatkoznak, hogy az ügyvéd adatkezelési tájékoztatóját megismerték és elfogadták.",
+    ),
   );
   out.push("");
 
@@ -671,7 +704,7 @@ export function generateContractDraft(c: CaseFile): string {
   out.push(
     sub(
       s,
-      `A jelen szerződést ${c.eljaroUgyved.nev || "[eljáró ügyvéd neve]"} (${c.eljaroUgyved.iroda || "[ügyvédi iroda]"}, ${c.eljaroUgyved.irodaCim || "[iroda címe]"}; KASZ: ${c.eljaroUgyved.kaszSzam || "[KASZ szám]"}) eljáró ügyvéd készítette és ellenjegyzi az ügyvédi tevékenységről szóló 2017. évi LXXVIII. törvény (Üttv.) 43. §-a, valamint az ingatlan-nyilvántartásról szóló 2021. évi C. törvény (új Inytv. — hatályos 2026.03.01-től) okiratszerkesztésre vonatkozó rendelkezései alapján.`,
+      `A jelen szerződést ${c.eljaroUgyved.nev || "[eljáró ügyvéd neve]"} (${c.eljaroUgyved.iroda || "[ügyvédi iroda]"}, ${c.eljaroUgyved.irodaCim || "[iroda címe]"}; KASZ: ${c.eljaroUgyved.kaszSzam || "[KASZ szám]"}) eljáró ügyvéd készítette és ellenjegyzi az ügyvédi tevékenységről szóló 2017. évi LXXVIII. törvény (Üttv.) 43. §-a, valamint az ingatlan-nyilvántartásról szóló 2021. évi C. törvény (új Inytv. — hatályos 2026.03.01-től) és a 179/2023. (V. 15.) Korm. rendelet okiratszerkesztésre és ingatlan-nyilvántartási eljárásra vonatkozó rendelkezései alapján.`,
     ),
   );
   out.push(
@@ -693,7 +726,7 @@ export function generateContractDraft(c: CaseFile): string {
   out.push(
     sub(
       s,
-      "A jelen szerződésben nem szabályozott kérdésekben a 2013. évi V. törvény (Ptk.), az ingatlan-nyilvántartásról szóló 2021. évi C. törvény (új Inytv.) és végrehajtási rendelete, az ügyvédi tevékenységről szóló 2017. évi LXXVIII. törvény (Üttv.), az illetékekről szóló 1990. évi XCIII. törvény (Itv.), valamint a vonatkozó egyéb magyar jogszabályok rendelkezései az irányadók.",
+      "A jelen szerződésben nem szabályozott kérdésekben a 2013. évi V. törvény (Ptk.), az ingatlan-nyilvántartásról szóló 2021. évi C. törvény (új Inytv.) és annak végrehajtási rendelete, a 179/2023. (V. 15.) Korm. rendelet, az ügyvédi tevékenységről szóló 2017. évi LXXVIII. törvény (Üttv.), az illetékekről szóló 1990. évi XCIII. törvény (Itv.), valamint a vonatkozó egyéb magyar jogszabályok rendelkezései az irányadók.",
     ),
   );
   out.push(
@@ -703,7 +736,10 @@ export function generateContractDraft(c: CaseFile): string {
     ),
   );
   out.push(
-    sub(s, "A jelen szerződés módosítása kizárólag írásban, valamennyi Fél egyező akaratnyilatkozatával, ügyvédi ellenjegyzéssel érvényes."),
+    sub(
+      s,
+      "A jelen szerződés módosítása kizárólag írásban, valamennyi Fél egyező akaratnyilatkozatával, ügyvédi ellenjegyzéssel érvényes.",
+    ),
   );
   const peldany = eladok.length + vevok.length + 3;
   out.push(
@@ -753,9 +789,7 @@ export function generateContractDraft(c: CaseFile): string {
   out.push(`    Kelt: ____________   Hely: ${c.property.telepules || "____________"}`);
   out.push("    P.H. és aláírás: __________________________");
   out.push("");
-  out.push(
-    "— TERVEZET vége. Ügyvédi felülvizsgálat és ellenjegyzés nélkül nem használható. —",
-  );
+  out.push("— TERVEZET vége. Ügyvédi felülvizsgálat és ellenjegyzés nélkül nem használható. —");
 
   // Sanitize: collapse double punctuation, stray ellipses, double spaces.
   return out

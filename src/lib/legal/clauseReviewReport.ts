@@ -7,6 +7,11 @@ import {
 } from "./clauseMatrix";
 import { generateContractDraft } from "./contract";
 import { getLegalSource, isKnownLegalSourceId } from "./legalSources";
+import {
+  contractOutputStatusLabel,
+  evaluateLegalRuleSystem,
+  type LegalRuleAuditResult,
+} from "./legalRules/evaluate";
 import { detectMissingFields, generateCaseSummary, generateRiskFlags } from "./logic";
 import type { CaseFile, MissingField, Party, RiskFlag } from "./types";
 
@@ -23,6 +28,7 @@ export interface ClauseReviewReport {
   activeClauses: ClauseReportItem[];
   missingLawRefMetadata: string[];
   hasCriticalMissingData: boolean;
+  legalRuleAudit: LegalRuleAuditResult;
 }
 
 const REVIEW_REQUIRED_STATUS = "ai_prelinked_pending_lawyer_review";
@@ -151,10 +157,12 @@ function lawRefSummary(lawRef: LawRef): string[] {
 
 export function generateClauseReviewReport(c: CaseFile): ClauseReviewReport {
   const contract = generateContractDraft(c);
+  const legalRuleAudit = evaluateLegalRuleSystem(c, contract);
   const risks = generateRiskFlags(c);
   const missing = detectMissingFields(c);
   const activePairings = getActiveClausePairings(c);
-  const hasCriticalMissing = isCriticalMissingData(missing);
+  const hasCriticalMissing =
+    isCriticalMissingData(missing) || legalRuleAudit.outputStatus === "HIANYOS_TERVEZET";
   const titlePrefix = hasCriticalMissing ? "HIANYOS-TERVEZET - " : "";
   const title = `${titlePrefix}Ügyvédi klauzula review report`;
 
@@ -203,7 +211,52 @@ export function generateClauseReviewReport(c: CaseFile): ClauseReviewReport {
     `- Eladó(k): ${eladok.join(", ") || "—"}`,
     `- Vevő(k): ${vevok.join(", ") || "—"}`,
     `- Generálás időpontja: ${new Date().toLocaleString("hu-HU")}`,
+    `- Tervezet státusza: ${legalRuleAudit.outputStatus} — ${contractOutputStatusLabel(legalRuleAudit.outputStatus)}`,
     `- Figyelmeztetések: kritikus ${criticalCount}, magas ${highCount}, közepes ${mediumCount}`,
+    "",
+    "## Aktív jogi szabályok",
+    "",
+    ...legalRuleAudit.activeRules.flatMap((item) => [
+      `### ${item.rule.id} — ${item.rule.title}`,
+      "",
+      "- Miért aktív? Determinisztikus appliesWhen feltétel teljesült; technikai egyezés.",
+      `- Kockázati szint: ${item.rule.riskLevel}`,
+      `- Szabály review státusz: ${item.rule.reviewStatus}`,
+      `- Blokkoló feltétel: ${item.blocking ? "igen" : "nem"}`,
+      `- Jogforrás-kapcsolódások: ${item.rule.sourceRefs
+        .map((sourceRef) => {
+          const source = getLegalSource(sourceRef);
+          return `${sourceRef} (${source.sourceUrl}; ${source.verificationStatus})`;
+        })
+        .join("; ")}`,
+      `- Szükséges tények: ${item.rule.requiredFacts.map(code).join(", ") || "—"}`,
+      `- Hiányzó tények: ${item.missingFacts.map(code).join(", ") || "—"}`,
+      `- Szükséges klauzulák: ${
+        item.requiredClauseStatuses
+          .map(
+            (clause) => `${clause.clauseId} (${clause.found ? clause.reviewStatus : "hiányzik"})`,
+          )
+          .join(", ") || "—"
+      }`,
+      "",
+      "Ügyvédi review kérdések:",
+      "",
+      ...(item.rule.auditQuestions.length
+        ? item.rule.auditQuestions.map((question) => `- ${question}`)
+        : ["- —"]),
+      "",
+    ]),
+    "## Hiányzó kritikus adatok",
+    "",
+    ...(legalRuleAudit.missingCriticalFacts.length
+      ? legalRuleAudit.missingCriticalFacts.map((field) => `- ${field}`)
+      : ["- Nincs azonosított kritikus hiány a szabálymotor szerint."]),
+    "",
+    "## Blokkoló feltételek",
+    "",
+    ...(legalRuleAudit.blockingConditions.length
+      ? legalRuleAudit.blockingConditions.map((condition) => `- ${condition}`)
+      : ["- Nincs aktív blokkoló feltétel."]),
     "",
     "## Aktív klauzulák",
     "",
@@ -283,6 +336,11 @@ export function generateClauseReviewReport(c: CaseFile): ClauseReviewReport {
     `- Clauses missing lawRef metadata: ${missingLawRefMetadata.length}`,
     `- Clauses requiring lawyer decision: ${clausesRequiringDecision}`,
     `- Clauses that should block finalization: ${hasCriticalMissing ? blockingClauses + missing.length : blockingClauses}`,
+    `- Determinisztikus aktív szabályok: ${legalRuleAudit.activeRules.length}`,
+    `- Aktív klauzulasablonok: ${legalRuleAudit.activeClauses.length}`,
+    `- Unresolved placeholders: ${legalRuleAudit.unresolvedPlaceholders.length}`,
+    `- Consistency issues: ${legalRuleAudit.consistencyIssues.length}`,
+    `- Final output status: ${legalRuleAudit.outputStatus}`,
     "",
     "Megjegyzés: a fenti elemek előpárosított hivatkozások és jogszabályi kapcsolódások. A hatály és az ügyre alkalmazhatóság ügyvédi ellenőrzést igényel.",
     "",
@@ -299,5 +357,6 @@ export function generateClauseReviewReport(c: CaseFile): ClauseReviewReport {
     activeClauses,
     missingLawRefMetadata,
     hasCriticalMissingData: hasCriticalMissing,
+    legalRuleAudit,
   };
 }

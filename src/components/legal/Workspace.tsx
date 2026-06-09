@@ -31,13 +31,17 @@ import {
   generateCaseSummary,
 } from "@/lib/legal/logic";
 import { generateContractDraft } from "@/lib/legal/contract";
+import {
+  contractOutputStatusLabel,
+  evaluateLegalRuleSystem,
+  type LegalRuleAuditResult,
+} from "@/lib/legal/legalRules/evaluate";
 import { Modulok } from "@/components/legal/Modulok";
 import { JogiAsszisztens } from "@/components/legal/JogiAsszisztens";
 import { UgyvedChecklist } from "@/components/legal/UgyvedChecklist";
 import { IntakeLinkPanel } from "@/components/legal/IntakeLinkPanel";
 import { CaseSwitcher } from "@/components/legal/CaseSwitcher";
 import { Button } from "@/components/ui/button";
-
 
 type StepId = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
@@ -71,10 +75,9 @@ export function Workspace() {
   const [hydrated, setHydrated] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [checklistOpen, setChecklistOpen] = useState(false);
-  const [outputTab, setOutputTab] =
-    useState<"szerzodes" | "hianyzo" | "kockazat" | "mellekletek" | "osszefoglalo">(
-      "szerzodes",
-    );
+  const [outputTab, setOutputTab] = useState<
+    "szerzodes" | "hianyzo" | "szabalyok" | "kockazat" | "mellekletek" | "osszefoglalo"
+  >("szerzodes");
 
   useEffect(() => {
     let cancelled = false;
@@ -88,7 +91,9 @@ export function Workspace() {
       setC(loaded);
       setHydrated(true);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -100,6 +105,7 @@ export function Workspace() {
   const attachments = useMemo(() => generateAttachmentList(c), [c]);
   const summary = useMemo(() => generateCaseSummary(c), [c]);
   const contract = useMemo(() => generateContractDraft(c), [c]);
+  const legalRuleAudit = useMemo(() => evaluateLegalRuleSystem(c, contract), [c, contract]);
 
   const update = (fn: (draft: CaseFile) => void) => {
     setC((prev) => {
@@ -136,7 +142,9 @@ export function Workspace() {
         : outputTab === "osszefoglalo"
           ? summary
           : outputTab === "hianyzo"
-            ? missing.map((m) => `[${m.group}] ${m.field}${m.reszlet ? " — " + m.reszlet : ""}`).join("\n")
+            ? missing
+                .map((m) => `[${m.group}] ${m.field}${m.reszlet ? " — " + m.reszlet : ""}`)
+                .join("\n")
             : outputTab === "kockazat"
               ? risks
                   .map(
@@ -207,11 +215,10 @@ export function Workspace() {
       <header className="no-print border-b border-border bg-primary text-primary-foreground">
         <div className="px-6 py-4 flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold tracking-tight">
-              Szladits Magánjogi Asszisztens
-            </h1>
+            <h1 className="text-xl font-semibold tracking-tight">Szladits Magánjogi Asszisztens</h1>
             <p className="text-xs opacity-80 mt-1">
-              Belső okiratszerkesztési tesztverzió ügyvédi irodák számára — szabálylogikával támogatott okiratszerkesztési demo. Jogi review szükséges.
+              Belső okiratszerkesztési tesztverzió ügyvédi irodák számára — szabálylogikával
+              támogatott okiratszerkesztés. Jogi review szükséges.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -243,7 +250,6 @@ export function Workspace() {
               Aktív ügy törlése
             </Button>
           </div>
-
         </div>
       </header>
 
@@ -280,7 +286,8 @@ export function Workspace() {
             <div className="pt-2 border-t border-sidebar-border">
               <div className="font-semibold text-foreground mb-1">Ügyvédi iroda (letterhead)</div>
               <p className="text-[10px] text-muted-foreground mb-1">
-                Ez az adatcsomag jelenik meg a generált PDF tetején fejlécként és az ellenjegyzésnél. Szladits-brand a kliensnek küldött szerződésen NEM látszik.
+                Ez az adatcsomag jelenik meg a generált PDF tetején fejlécként és az
+                ellenjegyzésnél. Szladits-brand a kliensnek küldött szerződésen NEM látszik.
               </p>
               <input
                 className="mt-1 w-full rounded-md border border-input bg-card px-2 py-1 text-sm text-foreground"
@@ -362,6 +369,7 @@ export function Workspace() {
                 missing={missing}
                 risks={risks}
                 attachments={attachments}
+                legalRuleAudit={legalRuleAudit}
                 onCopy={handleCopy}
                 onPrint={handlePrint}
                 onExport={exportFile}
@@ -395,11 +403,8 @@ export function Workspace() {
               )}
               {missing.map((m, i) => (
                 <li key={i} className="text-foreground">
-                  <span className="font-mono text-muted-foreground">[{m.group}]</span>{" "}
-                  {m.field}
-                  {m.reszlet ? (
-                    <span className="text-muted-foreground"> — {m.reszlet}</span>
-                  ) : null}
+                  <span className="font-mono text-muted-foreground">[{m.group}]</span> {m.field}
+                  {m.reszlet ? <span className="text-muted-foreground"> — {m.reszlet}</span> : null}
                 </li>
               ))}
             </ul>
@@ -453,20 +458,15 @@ export function Workspace() {
 function DraftBanner() {
   return (
     <div className="mb-4 rounded-md border border-accent/40 bg-accent/10 px-3 py-2 text-xs text-foreground">
-      <strong className="text-accent">TERVEZET</strong> — ügyvédi ellenőrzés és ellenjegyzés szükséges. A rendszer nem helyettesíti az ügyvéd szakmai döntését.
+      <strong className="text-accent">TERVEZET</strong> — ügyvédi ellenőrzés és ellenjegyzés
+      szükséges. A rendszer nem helyettesíti az ügyvéd szakmai döntését.
     </div>
   );
 }
 
 // ---------- Small form primitives ----------
 
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1 text-xs">
       <span className="text-muted-foreground">{label}</span>
@@ -519,13 +519,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 // ---------- Step 1 ----------
 
-function Step1({
-  c,
-  update,
-}: {
-  c: CaseFile;
-  update: (fn: (d: CaseFile) => void) => void;
-}) {
+function Step1({ c, update }: { c: CaseFile; update: (fn: (d: CaseFile) => void) => void }) {
   const toggle = (t: TransactionType) =>
     update((d) => {
       const i = d.transactionTypes.indexOf(t);
@@ -536,7 +530,8 @@ function Step1({
     <div>
       <SectionTitle>Ügylet és ingatlan típusa</SectionTitle>
       <p className="text-xs text-muted-foreground mb-3">
-        Több jelölő egyszerre is választható. A választás befolyásolja a kockázati flageket, a mellékletlistát és a szerződéstervezet szakaszait.
+        Több jelölő egyszerre is választható. A választás befolyásolja a kockázati flageket, a
+        mellékletlistát és a szerződéstervezet szakaszait.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
         {(Object.keys(TRANSACTION_TYPE_LABELS) as TransactionType[]).map((t) => (
@@ -575,13 +570,7 @@ function Step1({
 
 // ---------- Step 2 ----------
 
-function Step2({
-  c,
-  update,
-}: {
-  c: CaseFile;
-  update: (fn: (d: CaseFile) => void) => void;
-}) {
+function Step2({ c, update }: { c: CaseFile; update: (fn: (d: CaseFile) => void) => void }) {
   const addNatural = (szerep: "elado" | "vevo") =>
     update((d) => {
       const p: NaturalPerson = {
@@ -628,10 +617,18 @@ function Step2({
     <div>
       <SectionTitle>Felek</SectionTitle>
       <div className="flex flex-wrap gap-2 mb-4">
-        <Button size="sm" onClick={() => addNatural("elado")}>+ Eladó (természetes)</Button>
-        <Button size="sm" onClick={() => addNatural("vevo")}>+ Vevő (természetes)</Button>
-        <Button size="sm" variant="outline" onClick={() => addCompany("elado")}>+ Eladó (cég)</Button>
-        <Button size="sm" variant="outline" onClick={() => addCompany("vevo")}>+ Vevő (cég)</Button>
+        <Button size="sm" onClick={() => addNatural("elado")}>
+          + Eladó (természetes)
+        </Button>
+        <Button size="sm" onClick={() => addNatural("vevo")}>
+          + Vevő (természetes)
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => addCompany("elado")}>
+          + Eladó (cég)
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => addCompany("vevo")}>
+          + Vevő (cég)
+        </Button>
       </div>
       {c.parties.length === 0 && (
         <p className="text-xs text-muted-foreground">Nincs fél rögzítve.</p>
@@ -689,7 +686,9 @@ function PartyCard({
             <option value="elado">Eladó</option>
             <option value="vevo">Vevő</option>
           </Select>
-          <Button size="sm" variant="destructive" onClick={onRemove}>Törlés</Button>
+          <Button size="sm" variant="destructive" onClick={onRemove}>
+            Törlés
+          </Button>
         </div>
       </div>
 
@@ -700,10 +699,7 @@ function PartyCard({
           patchRep={patchRep}
         />
       ) : (
-        <CompanyForm
-          p={party}
-          patch={(k, v) => patch(k as keyof Party, v as Party[keyof Party])}
-        />
+        <CompanyForm p={party} patch={(k, v) => patch(k as keyof Party, v as Party[keyof Party])} />
       )}
     </div>
   );
@@ -730,16 +726,59 @@ function NaturalForm({
   return (
     <div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        <Field label="Név"><TextInput value={p.nev} onChange={(e) => patch("nev", e.target.value)} /></Field>
-        <Field label="Születési név"><TextInput value={p.szuletesiNev} onChange={(e) => patch("szuletesiNev", e.target.value)} /></Field>
-        <Field label="Anyja neve"><TextInput value={p.anyjaNeve} onChange={(e) => patch("anyjaNeve", e.target.value)} /></Field>
-        <Field label="Születési hely"><TextInput value={p.szuletesiHely} onChange={(e) => patch("szuletesiHely", e.target.value)} /></Field>
-        <Field label="Születési dátum"><TextInput type="date" value={p.szuletesiDatum} onChange={(e) => patch("szuletesiDatum", e.target.value)} /></Field>
-        <Field label="Lakcím"><TextInput value={p.lakcim} onChange={(e) => patch("lakcim", e.target.value)} /></Field>
-        <Field label="Okmány azonosító"><TextInput value={p.okmanyAzonosito} onChange={(e) => patch("okmanyAzonosito", e.target.value)} /></Field>
-        <Field label="Adóazonosító jel"><TextInput value={p.adoazonosito} onChange={(e) => patch("adoazonosito", e.target.value)} /></Field>
-        <Field label="Állampolgárság"><TextInput value={p.allampolgarsag} onChange={(e) => patch("allampolgarsag", e.target.value)} /></Field>
-        <Field label="Tulajdoni hányad"><TextInput value={p.tulajdoniHanyad} onChange={(e) => patch("tulajdoniHanyad", e.target.value)} placeholder="pl. 1/2" /></Field>
+        <Field label="Név">
+          <TextInput value={p.nev} onChange={(e) => patch("nev", e.target.value)} />
+        </Field>
+        <Field label="Születési név">
+          <TextInput
+            value={p.szuletesiNev}
+            onChange={(e) => patch("szuletesiNev", e.target.value)}
+          />
+        </Field>
+        <Field label="Anyja neve">
+          <TextInput value={p.anyjaNeve} onChange={(e) => patch("anyjaNeve", e.target.value)} />
+        </Field>
+        <Field label="Születési hely">
+          <TextInput
+            value={p.szuletesiHely}
+            onChange={(e) => patch("szuletesiHely", e.target.value)}
+          />
+        </Field>
+        <Field label="Születési dátum">
+          <TextInput
+            type="date"
+            value={p.szuletesiDatum}
+            onChange={(e) => patch("szuletesiDatum", e.target.value)}
+          />
+        </Field>
+        <Field label="Lakcím">
+          <TextInput value={p.lakcim} onChange={(e) => patch("lakcim", e.target.value)} />
+        </Field>
+        <Field label="Okmány azonosító">
+          <TextInput
+            value={p.okmanyAzonosito}
+            onChange={(e) => patch("okmanyAzonosito", e.target.value)}
+          />
+        </Field>
+        <Field label="Adóazonosító jel">
+          <TextInput
+            value={p.adoazonosito}
+            onChange={(e) => patch("adoazonosito", e.target.value)}
+          />
+        </Field>
+        <Field label="Állampolgárság">
+          <TextInput
+            value={p.allampolgarsag}
+            onChange={(e) => patch("allampolgarsag", e.target.value)}
+          />
+        </Field>
+        <Field label="Tulajdoni hányad">
+          <TextInput
+            value={p.tulajdoniHanyad}
+            onChange={(e) => patch("tulajdoniHanyad", e.target.value)}
+            placeholder="pl. 1/2"
+          />
+        </Field>
       </div>
 
       <div className="mt-3 rounded-md bg-secondary p-3 text-xs">
@@ -768,13 +807,35 @@ function NaturalForm({
       {isMinor && (
         <div className="mt-3 rounded-md border border-accent/40 bg-accent/5 p-3">
           <div className="text-xs font-semibold text-accent mb-2">
-            Kiskorú fél — törvényes képviselő szükséges. Gyámhatósági jóváhagyás szükségessége ügyvédi ellenőrzést igényel.
+            Kiskorú fél — törvényes képviselő szükséges. Gyámhatósági jóváhagyás szükségessége
+            ügyvédi ellenőrzést igényel.
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Field label="Képviselő neve"><TextInput value={p.kepviselo?.nev ?? ""} onChange={(e) => patchRep("nev", e.target.value)} /></Field>
-            <Field label="Képviselő minősége"><TextInput value={p.kepviselo?.minoseg ?? ""} onChange={(e) => patchRep("minoseg", e.target.value)} placeholder="szülő / gyám" /></Field>
-            <Field label="Képviselő lakcíme"><TextInput value={p.kepviselo?.lakcim ?? ""} onChange={(e) => patchRep("lakcim", e.target.value)} /></Field>
-            <Field label="Képviselő azonosítója"><TextInput value={p.kepviselo?.azonosito ?? ""} onChange={(e) => patchRep("azonosito", e.target.value)} /></Field>
+            <Field label="Képviselő neve">
+              <TextInput
+                value={p.kepviselo?.nev ?? ""}
+                onChange={(e) => patchRep("nev", e.target.value)}
+              />
+            </Field>
+            <Field label="Képviselő minősége">
+              <TextInput
+                value={p.kepviselo?.minoseg ?? ""}
+                onChange={(e) => patchRep("minoseg", e.target.value)}
+                placeholder="szülő / gyám"
+              />
+            </Field>
+            <Field label="Képviselő lakcíme">
+              <TextInput
+                value={p.kepviselo?.lakcim ?? ""}
+                onChange={(e) => patchRep("lakcim", e.target.value)}
+              />
+            </Field>
+            <Field label="Képviselő azonosítója">
+              <TextInput
+                value={p.kepviselo?.azonosito ?? ""}
+                onChange={(e) => patchRep("azonosito", e.target.value)}
+              />
+            </Field>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-3">
             <Check
@@ -802,8 +863,18 @@ function NaturalForm({
             Cselekvőképességi státusz ügyvédi ellenőrzést igényel.
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Field label="Gondnok / törvényes képviselő neve"><TextInput value={p.kepviselo?.nev ?? ""} onChange={(e) => patchRep("nev", e.target.value)} /></Field>
-            <Field label="Bírósági határozat / ügycsoport"><TextInput value={p.kepviselo?.hatarozat ?? ""} onChange={(e) => patchRep("hatarozat", e.target.value)} /></Field>
+            <Field label="Gondnok / törvényes képviselő neve">
+              <TextInput
+                value={p.kepviselo?.nev ?? ""}
+                onChange={(e) => patchRep("nev", e.target.value)}
+              />
+            </Field>
+            <Field label="Bírósági határozat / ügycsoport">
+              <TextInput
+                value={p.kepviselo?.hatarozat ?? ""}
+                onChange={(e) => patchRep("hatarozat", e.target.value)}
+              />
+            </Field>
           </div>
         </div>
       )}
@@ -811,23 +882,50 @@ function NaturalForm({
   );
 }
 
-function CompanyForm({
-  p,
-  patch,
-}: {
-  p: Company;
-  patch: (k: string, v: unknown) => void;
-}) {
+function CompanyForm({ p, patch }: { p: Company; patch: (k: string, v: unknown) => void }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-      <Field label="Cégnév"><TextInput value={p.cegnev} onChange={(e) => patch("cegnev", e.target.value)} /></Field>
-      <Field label="Cégjegyzékszám"><TextInput value={p.cegjegyzekszam} onChange={(e) => patch("cegjegyzekszam", e.target.value)} /></Field>
-      <Field label="Adószám"><TextInput value={p.adoszam} onChange={(e) => patch("adoszam", e.target.value)} /></Field>
-      <Field label="Székhely"><TextInput value={p.szekhely} onChange={(e) => patch("szekhely", e.target.value)} /></Field>
-      <Field label="Képviselő neve"><TextInput value={p.kepviseloNeve} onChange={(e) => patch("kepviseloNeve", e.target.value)} /></Field>
-      <Field label="Képviselet módja"><TextInput value={p.kepviseletModja} onChange={(e) => patch("kepviseletModja", e.target.value)} placeholder="önálló / együttes" /></Field>
-      <Field label="Cégkivonat dátuma"><TextInput type="date" value={p.cegkivonatDatuma} onChange={(e) => patch("cegkivonatDatuma", e.target.value)} /></Field>
-      <Field label="Tulajdoni hányad"><TextInput value={p.tulajdoniHanyad} onChange={(e) => patch("tulajdoniHanyad", e.target.value)} /></Field>
+      <Field label="Cégnév">
+        <TextInput value={p.cegnev} onChange={(e) => patch("cegnev", e.target.value)} />
+      </Field>
+      <Field label="Cégjegyzékszám">
+        <TextInput
+          value={p.cegjegyzekszam}
+          onChange={(e) => patch("cegjegyzekszam", e.target.value)}
+        />
+      </Field>
+      <Field label="Adószám">
+        <TextInput value={p.adoszam} onChange={(e) => patch("adoszam", e.target.value)} />
+      </Field>
+      <Field label="Székhely">
+        <TextInput value={p.szekhely} onChange={(e) => patch("szekhely", e.target.value)} />
+      </Field>
+      <Field label="Képviselő neve">
+        <TextInput
+          value={p.kepviseloNeve}
+          onChange={(e) => patch("kepviseloNeve", e.target.value)}
+        />
+      </Field>
+      <Field label="Képviselet módja">
+        <TextInput
+          value={p.kepviseletModja}
+          onChange={(e) => patch("kepviseletModja", e.target.value)}
+          placeholder="önálló / együttes"
+        />
+      </Field>
+      <Field label="Cégkivonat dátuma">
+        <TextInput
+          type="date"
+          value={p.cegkivonatDatuma}
+          onChange={(e) => patch("cegkivonatDatuma", e.target.value)}
+        />
+      </Field>
+      <Field label="Tulajdoni hányad">
+        <TextInput
+          value={p.tulajdoniHanyad}
+          onChange={(e) => patch("tulajdoniHanyad", e.target.value)}
+        />
+      </Field>
       <div className="flex flex-col gap-2 justify-end">
         <Check
           checked={p.alairasiCimpeldanySzukseges}
@@ -846,13 +944,7 @@ function CompanyForm({
 
 // ---------- Step 3 ----------
 
-function Step3({
-  c,
-  update,
-}: {
-  c: CaseFile;
-  update: (fn: (d: CaseFile) => void) => void;
-}) {
+function Step3({ c, update }: { c: CaseFile; update: (fn: (d: CaseFile) => void) => void }) {
   const p = c.property;
   const patch = (k: string, v: unknown) =>
     update((d) => {
@@ -866,43 +958,131 @@ function Step3({
     <div>
       <SectionTitle>Ingatlan adatai</SectionTitle>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        <Field label="Település"><TextInput value={p.telepules} onChange={(e) => patch("telepules", e.target.value)} /></Field>
-        <Field label="Irányítószám"><TextInput value={p.iranyitoszam} onChange={(e) => patch("iranyitoszam", e.target.value)} /></Field>
-        <Field label="Cím"><TextInput value={p.cim} onChange={(e) => patch("cim", e.target.value)} /></Field>
-        <Field label="Helyrajzi szám"><TextInput value={p.helyrajziSzam} onChange={(e) => patch("helyrajziSzam", e.target.value)} /></Field>
-        <Field label="Ingatlan típusa"><TextInput value={p.ingatlanTipus} onChange={(e) => patch("ingatlanTipus", e.target.value)} /></Field>
-        <Field label="Művelési ág"><TextInput value={p.muvelesiAg} onChange={(e) => patch("muvelesiAg", e.target.value)} /></Field>
-        <Field label="Alapterület (m²)"><TextInput value={p.alapterulet} onChange={(e) => patch("alapterulet", e.target.value)} /></Field>
-        <Field label="Tulajdoni hányad"><TextInput value={p.tulajdoniHanyad} onChange={(e) => patch("tulajdoniHanyad", e.target.value)} /></Field>
-        <Field label="Energetikai tanúsítvány"><TextInput value={p.energetikaiTanusitvany} onChange={(e) => patch("energetikaiTanusitvany", e.target.value)} /></Field>
+        <Field label="Település">
+          <TextInput value={p.telepules} onChange={(e) => patch("telepules", e.target.value)} />
+        </Field>
+        <Field label="Irányítószám">
+          <TextInput
+            value={p.iranyitoszam}
+            onChange={(e) => patch("iranyitoszam", e.target.value)}
+          />
+        </Field>
+        <Field label="Cím">
+          <TextInput value={p.cim} onChange={(e) => patch("cim", e.target.value)} />
+        </Field>
+        <Field label="Helyrajzi szám">
+          <TextInput
+            value={p.helyrajziSzam}
+            onChange={(e) => patch("helyrajziSzam", e.target.value)}
+          />
+        </Field>
+        <Field label="Ingatlan típusa">
+          <TextInput
+            value={p.ingatlanTipus}
+            onChange={(e) => patch("ingatlanTipus", e.target.value)}
+          />
+        </Field>
+        <Field label="Művelési ág">
+          <TextInput value={p.muvelesiAg} onChange={(e) => patch("muvelesiAg", e.target.value)} />
+        </Field>
+        <Field label="Alapterület (m²)">
+          <TextInput value={p.alapterulet} onChange={(e) => patch("alapterulet", e.target.value)} />
+        </Field>
+        <Field label="Tulajdoni hányad">
+          <TextInput
+            value={p.tulajdoniHanyad}
+            onChange={(e) => patch("tulajdoniHanyad", e.target.value)}
+          />
+        </Field>
+        <Field label="Energetikai tanúsítvány">
+          <TextInput
+            value={p.energetikaiTanusitvany}
+            onChange={(e) => patch("energetikaiTanusitvany", e.target.value)}
+          />
+        </Field>
         <Field label="Használati státusz">
-          <Select value={p.hasznalatiStatusz} onChange={(e) => patch("hasznalatiStatusz", e.target.value)}>
+          <Select
+            value={p.hasznalatiStatusz}
+            onChange={(e) => patch("hasznalatiStatusz", e.target.value)}
+          >
             <option value="">— válassz —</option>
             <option value="lakott">Lakott</option>
             <option value="ures">Üres</option>
             <option value="berbeadott">Bérbe adott</option>
           </Select>
         </Field>
-        <Field label="Birtokbaadás tervezett dátuma"><TextInput type="date" value={p.birtokbaadasTervezett} onChange={(e) => patch("birtokbaadasTervezett", e.target.value)} /></Field>
+        <Field label="Birtokbaadás tervezett dátuma">
+          <TextInput
+            type="date"
+            value={p.birtokbaadasTervezett}
+            onChange={(e) => patch("birtokbaadasTervezett", e.target.value)}
+          />
+        </Field>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-3">
-        <Check checked={p.tarsashaziAlbetet} onChange={(v) => patch("tarsashaziAlbetet", v)} label="Társasházi albetét" />
-        <Check checked={p.teremgarazsTarolo} onChange={(v) => patch("teremgarazsTarolo", v)} label="Teremgarázs / tároló kapcsolódik" />
-        <Check checked={p.birtokbanElado} onChange={(v) => patch("birtokbanElado", v)} label="Birtokban van az eladó" />
+        <Check
+          checked={p.tarsashaziAlbetet}
+          onChange={(v) => patch("tarsashaziAlbetet", v)}
+          label="Társasházi albetét"
+        />
+        <Check
+          checked={p.teremgarazsTarolo}
+          onChange={(v) => patch("teremgarazsTarolo", v)}
+          label="Teremgarázs / tároló kapcsolódik"
+        />
+        <Check
+          checked={p.birtokbanElado}
+          onChange={(v) => patch("birtokbanElado", v)}
+          label="Birtokban van az eladó"
+        />
       </div>
 
       <h3 className="text-sm font-semibold mt-6 mb-2">Tulajdoni lap — terhek és jogok</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-        <Check checked={p.encumbrances.jelzalog} onChange={(v) => patchEnc("jelzalog", v)} label="Jelzálogjog" />
-        <Check checked={p.encumbrances.vegrehajtas} onChange={(v) => patchEnc("vegrehajtas", v)} label="Végrehajtási jog" />
-        <Check checked={p.encumbrances.haszonelvezet} onChange={(v) => patchEnc("haszonelvezet", v)} label="Haszonélvezeti jog" />
-        <Check checked={p.encumbrances.elidegenitesiTilalom} onChange={(v) => patchEnc("elidegenitesiTilalom", v)} label="Elidegenítési és terhelési tilalom" />
-        <Check checked={p.encumbrances.elovasarlasiJog} onChange={(v) => patchEnc("elovasarlasiJog", v)} label="Elővásárlási jog" />
-        <Check checked={p.encumbrances.szolgalmiJog} onChange={(v) => patchEnc("szolgalmiJog", v)} label="Szolgalmi jog" />
+        <Check
+          checked={p.encumbrances.jelzalog}
+          onChange={(v) => patchEnc("jelzalog", v)}
+          label="Jelzálogjog"
+        />
+        <Check
+          checked={p.encumbrances.vegrehajtas}
+          onChange={(v) => patchEnc("vegrehajtas", v)}
+          label="Végrehajtási jog"
+        />
+        <Check
+          checked={p.encumbrances.haszonelvezet}
+          onChange={(v) => patchEnc("haszonelvezet", v)}
+          label="Haszonélvezeti jog"
+        />
+        <Check
+          checked={p.encumbrances.elidegenitesiTilalom}
+          onChange={(v) => patchEnc("elidegenitesiTilalom", v)}
+          label="Elidegenítési és terhelési tilalom"
+        />
+        <Check
+          checked={p.encumbrances.elovasarlasiJog}
+          onChange={(v) => patchEnc("elovasarlasiJog", v)}
+          label="Elővásárlási jog"
+        />
+        <Check
+          checked={p.encumbrances.szolgalmiJog}
+          onChange={(v) => patchEnc("szolgalmiJog", v)}
+          label="Szolgalmi jog"
+        />
       </div>
       <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-        <Field label="Egyéb teher / megjegyzés"><TextArea value={p.encumbrances.egyeb} onChange={(e) => patchEnc("egyeb", e.target.value)} /></Field>
-        <Field label="Tehermentesítési terv"><TextArea value={p.tehermentesitesiTerv} onChange={(e) => patch("tehermentesitesiTerv", e.target.value)} /></Field>
+        <Field label="Egyéb teher / megjegyzés">
+          <TextArea
+            value={p.encumbrances.egyeb}
+            onChange={(e) => patchEnc("egyeb", e.target.value)}
+          />
+        </Field>
+        <Field label="Tehermentesítési terv">
+          <TextArea
+            value={p.tehermentesitesiTerv}
+            onChange={(e) => patch("tehermentesitesiTerv", e.target.value)}
+          />
+        </Field>
       </div>
     </div>
   );
@@ -910,13 +1090,7 @@ function Step3({
 
 // ---------- Step 4 ----------
 
-function Step4({
-  c,
-  update,
-}: {
-  c: CaseFile;
-  update: (fn: (d: CaseFile) => void) => void;
-}) {
+function Step4({ c, update }: { c: CaseFile; update: (fn: (d: CaseFile) => void) => void }) {
   const p = c.payment;
   const patch = (k: string, v: unknown) =>
     update((d) => {
@@ -926,7 +1100,12 @@ function Step4({
     <div>
       <SectionTitle>Vételár és fizetés</SectionTitle>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <Field label="Teljes vételár"><TextInput value={p.teljesVetelar} onChange={(e) => patch("teljesVetelar", e.target.value)} /></Field>
+        <Field label="Teljes vételár">
+          <TextInput
+            value={p.teljesVetelar}
+            onChange={(e) => patch("teljesVetelar", e.target.value)}
+          />
+        </Field>
         <Field label="Pénznem">
           <Select value={p.penznem} onChange={(e) => patch("penznem", e.target.value)}>
             <option value="HUF">HUF</option>
@@ -944,40 +1123,95 @@ function Step4({
             <option value="forditott">Fordított adózás (Áfa tv. 142. §)</option>
           </Select>
         </Field>
-        <Field label="Önerő összege"><TextInput value={p.onero} onChange={(e) => patch("onero", e.target.value)} /></Field>
+        <Field label="Önerő összege">
+          <TextInput value={p.onero} onChange={(e) => patch("onero", e.target.value)} />
+        </Field>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mt-3">
-        <Check checked={p.foglaloVan} onChange={(v) => patch("foglaloVan", v)} label="Foglaló van" />
+        <Check
+          checked={p.foglaloVan}
+          onChange={(v) => patch("foglaloVan", v)}
+          label="Foglaló van"
+        />
         <Check checked={p.elolegVan} onChange={(v) => patch("elolegVan", v)} label="Előleg van" />
-        <Check checked={p.reszletfizetes} onChange={(v) => patch("reszletfizetes", v)} label="Részletfizetés" />
-        <Check checked={p.ugyvediLetet} onChange={(v) => patch("ugyvediLetet", v)} label="Ügyvédi letét" />
-        <Check checked={p.bankhitelVan} onChange={(v) => patch("bankhitelVan", v)} label="Bankhitel van" />
-        <Check checked={p.meglevoTeherKivaltas} onChange={(v) => patch("meglevoTeherKivaltas", v)} label="Meglévő teher kiváltása" />
+        <Check
+          checked={p.reszletfizetes}
+          onChange={(v) => patch("reszletfizetes", v)}
+          label="Részletfizetés"
+        />
+        <Check
+          checked={p.ugyvediLetet}
+          onChange={(v) => patch("ugyvediLetet", v)}
+          label="Ügyvédi letét"
+        />
+        <Check
+          checked={p.bankhitelVan}
+          onChange={(v) => patch("bankhitelVan", v)}
+          label="Bankhitel van"
+        />
+        <Check
+          checked={p.meglevoTeherKivaltas}
+          onChange={(v) => patch("meglevoTeherKivaltas", v)}
+          label="Meglévő teher kiváltása"
+        />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
         {p.foglaloVan && (
-          <Field label="Foglaló összege"><TextInput value={p.foglaloOsszeg} onChange={(e) => patch("foglaloOsszeg", e.target.value)} /></Field>
+          <Field label="Foglaló összege">
+            <TextInput
+              value={p.foglaloOsszeg}
+              onChange={(e) => patch("foglaloOsszeg", e.target.value)}
+            />
+          </Field>
         )}
         {p.bankhitelVan && (
           <>
-            <Field label="Bank neve"><TextInput value={p.bankNeve} onChange={(e) => patch("bankNeve", e.target.value)} /></Field>
-            <Field label="Hitel összege"><TextInput value={p.hitelOsszeg} onChange={(e) => patch("hitelOsszeg", e.target.value)} /></Field>
-            <Field label="Hitel folyósítás határideje"><TextInput type="date" value={p.hitelFolyositasHatarido} onChange={(e) => patch("hitelFolyositasHatarido", e.target.value)} /></Field>
+            <Field label="Bank neve">
+              <TextInput value={p.bankNeve} onChange={(e) => patch("bankNeve", e.target.value)} />
+            </Field>
+            <Field label="Hitel összege">
+              <TextInput
+                value={p.hitelOsszeg}
+                onChange={(e) => patch("hitelOsszeg", e.target.value)}
+              />
+            </Field>
+            <Field label="Hitel folyósítás határideje">
+              <TextInput
+                type="date"
+                value={p.hitelFolyositasHatarido}
+                onChange={(e) => patch("hitelFolyositasHatarido", e.target.value)}
+              />
+            </Field>
           </>
         )}
         {p.reszletfizetes && (
-          <Field label="Fizetési ütemezés"><TextArea value={p.fizetesiUtemezes} onChange={(e) => patch("fizetesiUtemezes", e.target.value)} /></Field>
+          <Field label="Fizetési ütemezés">
+            <TextArea
+              value={p.fizetesiUtemezes}
+              onChange={(e) => patch("fizetesiUtemezes", e.target.value)}
+            />
+          </Field>
         )}
         {p.meglevoTeherKivaltas && (
-          <Field label="Tehermentesítés módja"><TextArea value={p.tehermentesitesModja} onChange={(e) => patch("tehermentesitesModja", e.target.value)} /></Field>
+          <Field label="Tehermentesítés módja">
+            <TextArea
+              value={p.tehermentesitesModja}
+              onChange={(e) => patch("tehermentesitesModja", e.target.value)}
+            />
+          </Field>
         )}
-        <Field label="Utalási célszámlaszám"><TextInput value={p.utalasiSzamlaszam} onChange={(e) => patch("utalasiSzamlaszam", e.target.value)} /></Field>
+        <Field label="Utalási célszámlaszám">
+          <TextInput
+            value={p.utalasiSzamlaszam}
+            onChange={(e) => patch("utalasiSzamlaszam", e.target.value)}
+          />
+        </Field>
       </div>
       {p.bankhitelVan && (
         <div className="mt-4 rounded-md border border-accent/40 bg-accent/5 p-3 text-xs">
           <strong className="text-accent">Banki finanszírozás kockázatai:</strong> banki folyósítás
-          feltételei, önerő/hitel bontás, bejegyzési engedély kezelése, függőben tartás,
-          banki jelzálog és elidegenítési tilalom — ügyvédi ellenőrzést igényel.
+          feltételei, önerő/hitel bontás, bejegyzési engedély kezelése, függőben tartás, banki
+          jelzálog és elidegenítési tilalom — ügyvédi ellenőrzést igényel.
         </div>
       )}
     </div>
@@ -986,13 +1220,7 @@ function Step4({
 
 // ---------- Step 5 ----------
 
-function Step5({
-  c,
-  update,
-}: {
-  c: CaseFile;
-  update: (fn: (d: CaseFile) => void) => void;
-}) {
+function Step5({ c, update }: { c: CaseFile; update: (fn: (d: CaseFile) => void) => void }) {
   const p = c.possession;
   const patch = (k: string, v: unknown) =>
     update((d) => {
@@ -1002,17 +1230,52 @@ function Step5({
     <div>
       <SectionTitle>Birtokbaadás</SectionTitle>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <Field label="Birtokbaadás dátuma"><TextInput type="date" value={p.datum} onChange={(e) => patch("datum", e.target.value)} /></Field>
-        <Field label="Birtokbaadás feltétele"><TextInput value={p.feltetel} onChange={(e) => patch("feltetel", e.target.value)} /></Field>
-        <Field label="Eladó kiköltözési kötelezettsége"><TextInput value={p.eladoKikoltozes} onChange={(e) => patch("eladoKikoltozes", e.target.value)} /></Field>
-        <Field label="Ingóságok listája (ha maradnak)"><TextArea value={p.ingosagokListaja} onChange={(e) => patch("ingosagokListaja", e.target.value)} /></Field>
-        <Field label="Kötbér összege (ha van)"><TextInput value={p.kotberOsszeg} onChange={(e) => patch("kotberOsszeg", e.target.value)} /></Field>
+        <Field label="Birtokbaadás dátuma">
+          <TextInput type="date" value={p.datum} onChange={(e) => patch("datum", e.target.value)} />
+        </Field>
+        <Field label="Birtokbaadás feltétele">
+          <TextInput value={p.feltetel} onChange={(e) => patch("feltetel", e.target.value)} />
+        </Field>
+        <Field label="Eladó kiköltözési kötelezettsége">
+          <TextInput
+            value={p.eladoKikoltozes}
+            onChange={(e) => patch("eladoKikoltozes", e.target.value)}
+          />
+        </Field>
+        <Field label="Ingóságok listája (ha maradnak)">
+          <TextArea
+            value={p.ingosagokListaja}
+            onChange={(e) => patch("ingosagokListaja", e.target.value)}
+          />
+        </Field>
+        <Field label="Kötbér összege (ha van)">
+          <TextInput
+            value={p.kotberOsszeg}
+            onChange={(e) => patch("kotberOsszeg", e.target.value)}
+          />
+        </Field>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mt-3">
-        <Check checked={p.kozmuAtiras} onChange={(v) => patch("kozmuAtiras", v)} label="Közműóra átírás" />
-        <Check checked={p.kulcsAtadas} onChange={(v) => patch("kulcsAtadas", v)} label="Kulcsátadás" />
-        <Check checked={p.ingosagokMaradnak} onChange={(v) => patch("ingosagokMaradnak", v)} label="Ingóságok maradnak" />
-        <Check checked={p.kotberKesedelem} onChange={(v) => patch("kotberKesedelem", v)} label="Kötbér késedelem esetén" />
+        <Check
+          checked={p.kozmuAtiras}
+          onChange={(v) => patch("kozmuAtiras", v)}
+          label="Közműóra átírás"
+        />
+        <Check
+          checked={p.kulcsAtadas}
+          onChange={(v) => patch("kulcsAtadas", v)}
+          label="Kulcsátadás"
+        />
+        <Check
+          checked={p.ingosagokMaradnak}
+          onChange={(v) => patch("ingosagokMaradnak", v)}
+          label="Ingóságok maradnak"
+        />
+        <Check
+          checked={p.kotberKesedelem}
+          onChange={(v) => patch("kotberKesedelem", v)}
+          label="Kötbér késedelem esetén"
+        />
       </div>
     </div>
   );
@@ -1020,13 +1283,7 @@ function Step5({
 
 // ---------- Step 6 ----------
 
-function Step6({
-  c,
-  update,
-}: {
-  c: CaseFile;
-  update: (fn: (d: CaseFile) => void) => void;
-}) {
+function Step6({ c, update }: { c: CaseFile; update: (fn: (d: CaseFile) => void) => void }) {
   const f = c.special.foldforgalmi;
   const patchF = (k: string, v: unknown) =>
     update((d) => {
@@ -1035,23 +1292,29 @@ function Step6({
   const agriRelevant =
     c.transactionTypes.includes("termofold") ||
     c.transactionTypes.includes("tanya") ||
-    (c.transactionTypes.includes("zartkert") &&
-      c.special.zartkertStatus === "mezogazdasagi");
+    (c.transactionTypes.includes("zartkert") && c.special.zartkertStatus === "mezogazdasagi");
   const minors = c.parties.filter(
-    (p) => p.kind === "termeszetes" && (
-      determineCapacityStatus(p) === "cselekvokeptelen_kiskoru" ||
-      determineCapacityStatus(p) === "korlatozottan_cselekvokepes_kiskoru"
-    ),
+    (p) =>
+      p.kind === "termeszetes" &&
+      (determineCapacityStatus(p) === "cselekvokeptelen_kiskoru" ||
+        determineCapacityStatus(p) === "korlatozottan_cselekvokepes_kiskoru"),
   );
   const restricted = c.parties.filter(
-    (p) => p.kind === "termeszetes" && [
-      "nagykoru_korlatozott", "cselekvokeptelen_nagykoru", "gondnokkal", "ellenorzes_szukseges",
-    ].includes(determineCapacityStatus(p)),
+    (p) =>
+      p.kind === "termeszetes" &&
+      [
+        "nagykoru_korlatozott",
+        "cselekvokeptelen_nagykoru",
+        "gondnokkal",
+        "ellenorzes_szukseges",
+      ].includes(determineCapacityStatus(p)),
   );
   const companies = c.parties.filter((p) => p.kind === "ceg");
   const foreigners = c.parties.filter(
     (p) =>
-      (p.kind === "termeszetes" && p.allampolgarsag && p.allampolgarsag.toLowerCase() !== "magyar") ||
+      (p.kind === "termeszetes" &&
+        p.allampolgarsag &&
+        p.allampolgarsag.toLowerCase() !== "magyar") ||
       (p.kind === "ceg" && p.kulfoldiSzekhely),
   );
 
@@ -1067,21 +1330,74 @@ function Step6({
             jóváhagyási és kifüggesztési kötelezettségek ügyvédi ellenőrzése kötelező.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <Field label="Művelési ág"><TextInput value={f.muvelesiAg} onChange={(e) => patchF("muvelesiAg", e.target.value)} /></Field>
+            <Field label="Művelési ág">
+              <TextInput
+                value={f.muvelesiAg}
+                onChange={(e) => patchF("muvelesiAg", e.target.value)}
+              />
+            </Field>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
-            <Check checked={f.fold} onChange={(v) => patchF("fold", v)} label="Ingatlan földnek minősül" />
-            <Check checked={f.vevoFoldmuves} onChange={(v) => patchF("vevoFoldmuves", v)} label="Vevő földműves" />
-            <Check checked={f.eladoFoldmuves} onChange={(v) => patchF("eladoFoldmuves", v)} label="Eladó földműves" />
-            <Check checked={f.vevoHelybenLako} onChange={(v) => patchF("vevoHelybenLako", v)} label="Vevő helyben lakó" />
-            <Check checked={f.vevoSzomszed} onChange={(v) => patchF("vevoSzomszed", v)} label="Vevő helyben lakó szomszéd" />
-            <Check checked={f.haszonberlet} onChange={(v) => patchF("haszonberlet", v)} label="Haszonbérleti szerződés van" />
-            <Check checked={f.foldhasznalo} onChange={(v) => patchF("foldhasznalo", v)} label="Földhasználó bejegyezve" />
-            <Check checked={f.elovasarlasErintett} onChange={(v) => patchF("elovasarlasErintett", v)} label="Elővásárlási jog érintett" />
-            <Check checked={f.kifuggesztes} onChange={(v) => patchF("kifuggesztes", v)} label="Kifüggesztés szükséges" />
-            <Check checked={f.hatosagiJovahagyas} onChange={(v) => patchF("hatosagiJovahagyas", v)} label="Hatósági jóváhagyás szükséges" />
-            <Check checked={f.tulajdonszerzesiKorlat} onChange={(v) => patchF("tulajdonszerzesiKorlat", v)} label="Tulajdonszerzési korlát érintett" />
-            <Check checked={f.nyilatkozatok} onChange={(v) => patchF("nyilatkozatok", v)} label="Nyilatkozatok szükségesek" />
+            <Check
+              checked={f.fold}
+              onChange={(v) => patchF("fold", v)}
+              label="Ingatlan földnek minősül"
+            />
+            <Check
+              checked={f.vevoFoldmuves}
+              onChange={(v) => patchF("vevoFoldmuves", v)}
+              label="Vevő földműves"
+            />
+            <Check
+              checked={f.eladoFoldmuves}
+              onChange={(v) => patchF("eladoFoldmuves", v)}
+              label="Eladó földműves"
+            />
+            <Check
+              checked={f.vevoHelybenLako}
+              onChange={(v) => patchF("vevoHelybenLako", v)}
+              label="Vevő helyben lakó"
+            />
+            <Check
+              checked={f.vevoSzomszed}
+              onChange={(v) => patchF("vevoSzomszed", v)}
+              label="Vevő helyben lakó szomszéd"
+            />
+            <Check
+              checked={f.haszonberlet}
+              onChange={(v) => patchF("haszonberlet", v)}
+              label="Haszonbérleti szerződés van"
+            />
+            <Check
+              checked={f.foldhasznalo}
+              onChange={(v) => patchF("foldhasznalo", v)}
+              label="Földhasználó bejegyezve"
+            />
+            <Check
+              checked={f.elovasarlasErintett}
+              onChange={(v) => patchF("elovasarlasErintett", v)}
+              label="Elővásárlási jog érintett"
+            />
+            <Check
+              checked={f.kifuggesztes}
+              onChange={(v) => patchF("kifuggesztes", v)}
+              label="Kifüggesztés szükséges"
+            />
+            <Check
+              checked={f.hatosagiJovahagyas}
+              onChange={(v) => patchF("hatosagiJovahagyas", v)}
+              label="Hatósági jóváhagyás szükséges"
+            />
+            <Check
+              checked={f.tulajdonszerzesiKorlat}
+              onChange={(v) => patchF("tulajdonszerzesiKorlat", v)}
+              label="Tulajdonszerzési korlát érintett"
+            />
+            <Check
+              checked={f.nyilatkozatok}
+              onChange={(v) => patchF("nyilatkozatok", v)}
+              label="Nyilatkozatok szükségesek"
+            />
           </div>
 
           <div className="mt-5 pt-4 border-t border-accent/30">
@@ -1131,7 +1447,8 @@ function Step6({
           <h3 className="text-sm font-semibold mb-2">Zártkert</h3>
           <p className="text-xs text-muted-foreground">
             A zártkert minősítés (művelés alól kivett vagy mezőgazdasági) az 1. lépésben állítható.
-            Mezőgazdasági nyilvántartás esetén a földforgalmi szabályok alkalmazhatóságát ügyvédileg vizsgálni kell.
+            Mezőgazdasági nyilvántartás esetén a földforgalmi szabályok alkalmazhatóságát ügyvédileg
+            vizsgálni kell.
           </p>
         </div>
       )}
@@ -1186,18 +1503,22 @@ function Step7({
   missing,
   risks,
   attachments,
+  legalRuleAudit,
   onCopy,
   onPrint,
   onExport,
 }: {
   c: CaseFile;
-  tab: "szerzodes" | "hianyzo" | "kockazat" | "mellekletek" | "osszefoglalo";
-  setTab: (t: "szerzodes" | "hianyzo" | "kockazat" | "mellekletek" | "osszefoglalo") => void;
+  tab: "szerzodes" | "hianyzo" | "szabalyok" | "kockazat" | "mellekletek" | "osszefoglalo";
+  setTab: (
+    t: "szerzodes" | "hianyzo" | "szabalyok" | "kockazat" | "mellekletek" | "osszefoglalo",
+  ) => void;
   contract: string;
   summary: string;
   missing: ReturnType<typeof detectMissingFields>;
   risks: ReturnType<typeof generateRiskFlags>;
   attachments: ReturnType<typeof generateAttachmentList>;
+  legalRuleAudit: LegalRuleAuditResult;
   onCopy: () => void;
   onPrint: () => void;
   onExport: (
@@ -1208,6 +1529,7 @@ function Step7({
   const tabs: { id: typeof tab; label: string }[] = [
     { id: "szerzodes", label: "Szerződéstervezet" },
     { id: "hianyzo", label: `Hiányzó adatok (${missing.length})` },
+    { id: "szabalyok", label: `Aktív jogi szabályok (${legalRuleAudit.activeRules.length})` },
     { id: "kockazat", label: `Kockázati pontok (${risks.length})` },
     { id: "mellekletek", label: `Mellékletlista (${attachments.length})` },
     { id: "osszefoglalo", label: "Ügyleti összefoglaló" },
@@ -1216,8 +1538,7 @@ function Step7({
   const agri =
     c.transactionTypes.includes("termofold") ||
     c.transactionTypes.includes("tanya") ||
-    (c.transactionTypes.includes("zartkert") &&
-      c.special.zartkertStatus === "mezogazdasagi");
+    (c.transactionTypes.includes("zartkert") && c.special.zartkertStatus === "mezogazdasagi");
 
   const groups: Record<string, typeof missing> = {};
   missing.forEach((m) => {
@@ -1229,8 +1550,11 @@ function Step7({
     <div>
       <SectionTitle>Dokumentumcsomag</SectionTitle>
       <div className="mb-4 rounded-md border border-border bg-card p-3 flex flex-wrap gap-2 items-center">
+        <span className="rounded-md border border-border bg-muted px-2 py-1 text-xs font-semibold text-foreground">
+          {legalRuleAudit.outputStatus}
+        </span>
         <span className="text-xs text-muted-foreground mr-2">
-          A teljes dokumentumcsomag exportja (tervezet — ügyvédi ellenjegyzésre vár):
+          {contractOutputStatusLabel(legalRuleAudit.outputStatus)}
         </span>
         <Button size="sm" variant="default" onClick={() => void onExport("docx", "sima")}>
           📝 Word — sima nyomtatott
@@ -1285,6 +1609,20 @@ function Step7({
 
       {tab === "hianyzo" && (
         <div className="space-y-4">
+          <div className="rounded-md border border-border bg-card p-3">
+            <h3 className="text-sm font-semibold mb-2">Hiányzó kritikus adatok</h3>
+            {legalRuleAudit.missingCriticalFacts.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Nincs szabálymotor szerinti kritikus hiány.
+              </p>
+            ) : (
+              <ul className="text-sm list-disc pl-5 space-y-1">
+                {legalRuleAudit.missingCriticalFacts.map((field) => (
+                  <li key={field}>{field}</li>
+                ))}
+              </ul>
+            )}
+          </div>
           {Object.keys(groups).length === 0 && (
             <p className="text-sm text-muted-foreground">Nincs azonosított hiány.</p>
           )}
@@ -1301,6 +1639,56 @@ function Step7({
                   </li>
                 ))}
               </ul>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === "szabalyok" && (
+        <div className="space-y-3">
+          {legalRuleAudit.activeRules.map((item) => (
+            <div key={item.rule.id} className="rounded-md border border-border bg-card p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-sm font-semibold">{item.rule.title}</h3>
+                <span className="rounded-md border border-border bg-muted px-2 py-0.5 text-xs">
+                  {item.rule.riskLevel}
+                </span>
+                <span className="rounded-md border border-border bg-muted px-2 py-0.5 text-xs">
+                  {item.rule.reviewStatus === "lawyer_approved"
+                    ? "ügyvéd által jóváhagyva"
+                    : "ügyvédi ellenőrzés szükséges"}
+                </span>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Technikai egyezés: determinisztikus appliesWhen feltétel teljesült.
+              </p>
+              <div className="mt-2 grid gap-2 text-xs md:grid-cols-2">
+                <div>
+                  <div className="font-semibold">Jogforrás-kapcsolódások</div>
+                  <ul className="mt-1 list-disc pl-5">
+                    {item.rule.sourceRefs.map((sourceRef) => (
+                      <li key={sourceRef}>{sourceRef}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <div className="font-semibold">Hiányzó tények</div>
+                  {item.missingFacts.length === 0 ? (
+                    <p className="mt-1 text-muted-foreground">Nincs.</p>
+                  ) : (
+                    <ul className="mt-1 list-disc pl-5">
+                      {item.missingFacts.map((fact) => (
+                        <li key={fact}>{fact}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+              {item.blocking && (
+                <p className="mt-2 rounded-md border border-border bg-muted p-2 text-xs font-semibold">
+                  Blokkoló feltétel aktív: a tervezet nem jelölhető jóváhagyottként.
+                </p>
+              )}
             </div>
           ))}
         </div>
@@ -1347,7 +1735,9 @@ function Step7({
                 <span className="font-semibold">{a.cim}</span>
                 <span
                   className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded ${
-                    a.kotelezo ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"
+                    a.kotelezo
+                      ? "bg-accent text-accent-foreground"
+                      : "bg-muted text-muted-foreground"
                   }`}
                 >
                   {a.kotelezo ? "kötelező" : "ajánlott"}
